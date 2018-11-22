@@ -44,7 +44,7 @@ def play(wn, dif):
             self.sprites[self.current].draw(flip=True)
 
     class Skelly:
-        def __init__(self, life, direction="L"):
+        def __init__(self, life, direction="L", x=None):
             self.sprites = {
                 'idle': Sprite(get_asset("skelly{}idle.png".format(sep)), 11, size=(100,125)),
                 'attack': Sprite(get_asset("skelly{}attack.png".format(sep)), 18),
@@ -56,7 +56,7 @@ def play(wn, dif):
             self.current = 'walk'
 
             self.direction = direction
-            self.x = [0, wn.width][direction == "L"]
+            self.x = [-self.sprites[self.current].width, wn.width][direction == "L"] if not x else x
             self.y = wn.height - 122 - self.sprites[self.current].height
 
             self.width = self.sprites[self.current].width
@@ -71,21 +71,32 @@ def play(wn, dif):
             self.y = y
 
         def change_sprite(self, sprite):
-            self.current = sprite
-            self.sprites[self.current].set_curr_frame = 0
-            self.width = self.sprites[self.current].width
-            self.height = self.sprites[self.current].height
+            if self.current != sprite:
+                self.current = sprite
+                self.sprites[self.current].set_curr_frame = 0
+                self.width = self.sprites[self.current].width
+                self.height = self.sprites[self.current].height
 
         def define_action(self, monsters, ein):
             if self.direction == "L":
-                if ein.x + ein.width < self.x < ein.x+ein.width+ein.reach:
+                if ein.x + ein.width <= self.x <= ein.x+ein.width+ein.reach:
                     self.set_pos(ein.x + ein.width + ein.reach, self.y)
+                    self.idle()
+                    return
+            else:
+                if ein.x - ein.reach <= self.x + self.width <= ein.x:
+                    self.set_pos(ein.x - ein.reach - self.width, self.y)
                     self.idle()
                     return
             for m in monsters:
                 if self.direction == "L":
-                    if m.x <= self.x <= m.x + m.width:
+                    if m.x <= self.x - 10 <= m.x + m.width:
                         self.set_pos(m.x + m.width + 10, self.y)
+                        self.idle()
+                        return
+                else:
+                    if m.x <= self.x + self.width + 10 <= m.x + m.width:
+                        self.set_pos(m.x - self.width - 10, self.y)
                         self.idle()
                         return
             self.move()
@@ -94,8 +105,8 @@ def play(wn, dif):
             self.change_sprite("idle")
 
         def move(self):
-            if self.direction == "L":
-                self.x -= self.speed * wn.delta_time()
+            self.change_sprite("walk")
+            self.x += self.speed * wn.delta_time() * [-1, 1][self.direction=="R"]
             
 
         def update(self):
@@ -111,17 +122,36 @@ def play(wn, dif):
     background = GameImage(get_asset("bg.png"), (wn.width, wn.height))
     ein = Ein()
 
-    monsters = [Skelly(life=2)]
+    monsters = [Skelly(life=2), Skelly(life=1, direction="R")]
+    timer = time()
+    mouse = wn.get_mouse()
+    mt = time()
     while True:
         background.draw()
 
+        if time() - timer >= 3:
+            monsters.append(Skelly(life=1, direction="L"))
+            timer = float('inf')
         ein.update()
         ein.draw()
 
-        for m in monsters:
+        mouse_over_monster = False
+
+        for m in monsters[:]:
+            if mouse.is_over_object(m):
+                mouse_over_monster = True
+                if mouse.is_button_pressed(1) and time() - mt > 0.5:
+                    mt = time()
+                    monsters.remove(m)
+                    continue
             m.define_action([i for i in monsters if i != m], ein)
             m.update()
             m.draw()
+        
+        if mouse.is_button_pressed(1) and not mouse_over_monster and time() - mt > 0.5:
+            mt = time()
+            mx = mouse.get_position()[0]
+            monsters.append(Skelly(life=1, direction = ["R", "L"][mx >= wn.width/2], x=mx))
 
         wn.update()
 
