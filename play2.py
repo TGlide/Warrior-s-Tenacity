@@ -49,6 +49,7 @@ def play(wn, dif):
                 'idle': Sprite(get_asset("skelly{}idle.png".format(sep)), 11, size=(100,125)),
                 'attack': Sprite(get_asset("skelly{}attack.png".format(sep)), 18),
                 'walk': Sprite(get_asset("skelly{}walk.png".format(sep)), 13, size=(100,125)),
+                'dead': Sprite(get_asset("skelly{}dead.png".format(sep)), 15, size=(150,125))
             }
             for s in self.sprites.values():
                 s.set_total_duration(800)
@@ -63,6 +64,7 @@ def play(wn, dif):
             self.height = self.sprites[self.current].height
 
             self.life = life
+            self.dead = False
             self.reach = 50
             self.speed = 80
 
@@ -78,6 +80,9 @@ def play(wn, dif):
                 self.height = self.sprites[self.current].height
 
         def define_action(self, monsters, ein):
+            if self.life == 0:
+                self.death()
+                return
             if self.direction == "L":
                 if ein.x + ein.width <= self.x <= ein.x+ein.width+ein.reach:
                     self.set_pos(ein.x + ein.width + ein.reach, self.y)
@@ -108,6 +113,12 @@ def play(wn, dif):
             self.change_sprite("walk")
             self.x += self.speed * wn.delta_time() * [-1, 1][self.direction=="R"]
             
+        def death(self):
+            self.change_sprite("dead")
+            
+            if self.sprites[self.current].get_curr_frame() == self.sprites[self.current].get_final_frame() - 1:
+                self.dead = True
+            
 
         def update(self):
             self.sprites[self.current].set_position(self.x, self.y)
@@ -119,6 +130,8 @@ def play(wn, dif):
     #############
     # Variables #
     #############
+    DEBUGGING = True
+
     background = GameImage(get_asset("bg.png"), (wn.width, wn.height))
     ein = Ein()
 
@@ -138,20 +151,26 @@ def play(wn, dif):
         mouse_over_monster = False
 
         for m in monsters[:]:
-            if mouse.is_over_object(m):
+            # Para debuggar
+            if mouse.is_over_object(m) and DEBUGGING:
                 mouse_over_monster = True
                 if mouse.is_button_pressed(1) and time() - mt > 0.5:
                     mt = time()
-                    monsters.remove(m)
+                    m.life = 0
                     continue
+            # Fim debug
             m.define_action([i for i in monsters if i != m], ein)
             m.update()
             m.draw()
+            if m.dead:
+                monsters.remove(m)
         
-        if mouse.is_button_pressed(1) and not mouse_over_monster and time() - mt > 0.5:
+        # Para debuggar
+        if mouse.is_button_pressed(1) and not mouse_over_monster and time() - mt > 0.5 and DEBUGGING:
             mt = time()
             mx = mouse.get_position()[0]
             monsters.append(Skelly(life=1, direction = ["R", "L"][mx >= wn.width/2], x=mx))
+        # Fim debug
 
         wn.update()
 

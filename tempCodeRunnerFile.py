@@ -1,2 +1,2 @@
 
-# GAME CONSTANTS #
+def play(wn, dif):
