@@ -14,8 +14,8 @@ def play(wn, difficulty):
         def __init__(self, x, y):
             # Sprites for all different states for Ein
             self.sprites = {
-                "idle": Sprite(get_asset("ein%sein_idle_left.png" % os.sep), 4),
-                "walk": Sprite(get_asset("ein%sein_walking_left.png" % os.sep), 6),
+                "idle": Sprite(get_asset("ein%sidle.png" % os.sep), 4),
+                "walk": Sprite(get_asset("ein%swalk.png" % os.sep), 6),
             }
 
             self.last_sprite = "idle"  # This is needed for resetting the frames when chaning states

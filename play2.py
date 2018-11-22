@@ -25,6 +25,10 @@ def play(wn, dif):
 
             self.x = wn.width/2 - self.sprites[self.current].width/2
             self.y = wn.height - 122 - self.sprites[self.current].height
+
+            self.width = self.sprites[self.current].width
+            self.height = self.sprites[self.current].height
+
             self.life = 6
             self.reach = 50
 
@@ -37,17 +41,17 @@ def play(wn, dif):
             self.sprites[self.current].update()
 
         def draw(self):
-            self.sprites[self.current].draw()
+            self.sprites[self.current].draw(flip=True)
 
     class Skelly:
         def __init__(self, life, direction="L"):
             self.sprites = {
-                'idle': Sprite(get_asset("skelly{}idle.png".format(sep)), 11),
+                'idle': Sprite(get_asset("skelly{}idle.png".format(sep)), 11, size=(100,125)),
                 'attack': Sprite(get_asset("skelly{}attack.png".format(sep)), 18),
-                'walk': Sprite(get_asset("skelly{}walk.png".format(sep)), 13),
+                'walk': Sprite(get_asset("skelly{}walk.png".format(sep)), 13, size=(100,125)),
             }
             for s in self.sprites.values():
-                s.set_total_duration(500)
+                s.set_total_duration(800)
 
             self.current = 'walk'
 
@@ -60,7 +64,7 @@ def play(wn, dif):
 
             self.life = life
             self.reach = 50
-            self.speed = 500
+            self.speed = 80
 
         def set_pos(self, x, y):
             self.x = x
@@ -69,6 +73,8 @@ def play(wn, dif):
         def change_sprite(self, sprite):
             self.current = sprite
             self.sprites[self.current].set_curr_frame = 0
+            self.width = self.sprites[self.current].width
+            self.height = self.sprites[self.current].height
 
         def define_action(self, monsters, ein):
             if self.direction == "L":
@@ -88,25 +94,34 @@ def play(wn, dif):
             self.change_sprite("idle")
 
         def move(self):
-            pass
+            if self.direction == "L":
+                self.x -= self.speed * wn.delta_time()
+            
 
         def update(self):
             self.sprites[self.current].set_position(self.x, self.y)
             self.sprites[self.current].update()
 
         def draw(self):
-            self.sprites[self.current].draw()
+            self.sprites[self.current].draw(flip=[False, True][self.direction=="L"])
 
     #############
     # Variables #
     #############
     background = GameImage(get_asset("bg.png"), (wn.width, wn.height))
     ein = Ein()
+
+    monsters = [Skelly(life=2)]
     while True:
         background.draw()
 
         ein.update()
         ein.draw()
+
+        for m in monsters:
+            m.define_action([i for i in monsters if i != m], ein)
+            m.update()
+            m.draw()
 
         wn.update()
 
