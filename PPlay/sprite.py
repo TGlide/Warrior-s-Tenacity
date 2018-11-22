@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # Modules
 import sys
 import time
@@ -17,7 +19,8 @@ class Sprite(animation.Animation):
     """
     def __init__(self, image_file, frames=1, size=None):
         # Parent's constructor must be first-called
-        animation.Animation.__init__(self, image_file, frames, size=size)
+        xs = (size[0]*frames, size[1]) if size else size
+        animation.Animation.__init__(self, image_file, frames, size=xs)
 
     """Permite a movimentação com o teclado no eixo X"""
     def move_key_x(self, speed):

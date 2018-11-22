@@ -14,8 +14,8 @@ def play(wn, difficulty):
         def __init__(self, x, y):
             # Sprites for all different states for Ein
             self.sprites = {
-                "idle": Sprite(get_asset("ein%sein_idle_left.png" % os.sep), 4),
-                "walk": Sprite(get_asset("ein%sein_walking_left.png" % os.sep), 6),
+                "idle": Sprite(get_asset("ein%sidle.png" % os.sep), 4),
+                "walk": Sprite(get_asset("ein%swalk.png" % os.sep), 6),
             }
 
             self.last_sprite = "idle"  # This is needed for resetting the frames when chaning states
@@ -235,22 +235,31 @@ def play(wn, difficulty):
         "Knight": []
     }
 
+    chosen_enemy_type = None
     spawn_timer = time()
     # Game Loop
     while True:
         fundo.draw()
 
         for enemy_type in enemies:
-            if time() - spawn_timer >= eval(enemy_type).spawn_interval and len(enemies[enemy_type]) < MAX_ENEMIES:
-                spawn_timer = time()
-                orient = choice(["L", "R"])
-                en_x = [0, wn.width][orient == "L"]
-                enemies[enemy_type].append(
-                    eval(enemy_type)(en_x, FLOOR_Y, orient))
             for enemy in enemies[enemy_type]:
                 enemy.move(ENEMY_SPEED, ein)
                 enemy.draw()
                 enemy.update()
+
+        if not chosen_enemy_type:
+            chosen_enemy_type = choice(list(enemies.keys()))
+            print(chosen_enemy_type)
+        if time() - spawn_timer >= eval(chosen_enemy_type).spawn_interval:
+            if len(enemies[chosen_enemy_type]) >= MAX_ENEMIES:
+                chosen_enemy_type = None
+                continue
+            spawn_timer = time()
+            orient = choice(["L", "R"])
+            en_x = [0, wn.width][orient == "L"]
+            enemies[chosen_enemy_type].append(
+                eval(chosen_enemy_type)(en_x, FLOOR_Y, orient))
+            chosen_enemy_type = None
 
         # ein.move_key_x(1)
         ein.update()
@@ -258,3 +267,7 @@ def play(wn, difficulty):
         ein.draw()
 
         wn.update()
+
+
+if __name__ == "__main__":
+    play(Window(1280, 768), 1)

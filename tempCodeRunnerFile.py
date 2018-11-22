@@ -1,0 +1,2 @@
+
+def play(wn, dif):
