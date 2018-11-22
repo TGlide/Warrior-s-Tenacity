@@ -31,25 +31,26 @@ def dificuldade(wn):
               size=100, color=(255, 255, 255), local_font=True)
 	selection_idx = 0
 	selection_time_counter = time.time()
-
+	
+	mouse = wn.get_mouse()
 	while True:
 		wn.set_background_color((0,0,0))
 		
 		dificul.draw()
 		for option in options:
 			option.draw()
+			if mouse.is_over_object(option):
+					selection_idx = options.index(option)
 
-		if time.time() - selection_time_counter >= 0.125: # Impede alternar entre seleções muito rapidamente
-			selection_time_counter = time.time()
-			if window.Window.get_keyboard().key_pressed("up"):
-				selection_idx = [len(options)-1, selection_idx - 1][selection_idx > 0]
-			elif window.Window.get_keyboard().key_pressed("down"):
-				selection_idx = (selection_idx + 1) % len(options)
-			elif window.Window.get_keyboard().key_pressed("enter"):
-				return selection_idx + 1
-		
-		selection = options[selection_idx]
-		selection_arrow.set_position(selection.x - selection_arrow.width, selection.y)
-		selection_arrow.draw()
+		if selection_idx != -1:
+			selection=options[selection_idx]
+			selection_arrow.set_position(
+				selection.x - selection_arrow.width - 10, selection.y)
+			selection_arrow.draw()
+			
+			if time.time() - selection_time_counter >= 0.125 and mouse.is_button_pressed(1):  # Impede alternar entre seleções muito rapidamente
+				selection_time_counter=time.time()
+				if selection_idx != -1:
+					return selection_idx
 
 		wn.update()
