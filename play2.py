@@ -11,17 +11,22 @@ from helpers import *
 
 
 def play(wn, dif):
+    ###########
+    # Classes #
+    ###########
     class Ein:
         def __init__(self):
+            # Dicionário com spritesheets para diferentes estados
             self.sprites = {
                 'idle': Sprite(get_asset("ein{}idle.png".format(sep)), 4),
                 'attack': Sprite(get_asset("ein{}attack.png".format(sep)), 7),
                 'walk': Sprite(get_asset("ein{}walk.png".format(sep)), 6),
             }
+            # Setar duração da animação dos sprite sheets
             for s in self.sprites.values():
                 s.set_total_duration(500)
 
-            self.current = 'idle'
+            self.current = 'idle' # Estado atual
 
             self.x = wn.width/2 - self.sprites[self.current].width/2
             self.y = wn.height - 122 - self.sprites[self.current].height
@@ -30,7 +35,7 @@ def play(wn, dif):
             self.height = self.sprites[self.current].height
 
             self.life = 6
-            self.reach = 50
+            self.reach = 50 # Alcance de Ein ate os inimigos
 
         def set_pos(self, x, y):
             self.x = x
@@ -45,16 +50,18 @@ def play(wn, dif):
 
     class Skelly:
         def __init__(self, life, direction="L", x=None):
+            # Dicionário com spritesheets para diferentes estados
             self.sprites = {
                 'idle': Sprite(get_asset("skelly{}idle.png".format(sep)), 11, size=(100,125)),
                 'attack': Sprite(get_asset("skelly{}attack.png".format(sep)), 18),
                 'walk': Sprite(get_asset("skelly{}walk.png".format(sep)), 13, size=(100,125)),
                 'dead': Sprite(get_asset("skelly{}dead.png".format(sep)), 15, size=(150,125))
             }
+            # Setar duração da animação dos sprite sheets
             for s in self.sprites.values():
                 s.set_total_duration(800)
 
-            self.current = 'walk'
+            self.current = 'walk' # Estado atual
 
             self.direction = direction
             self.x = [-self.sprites[self.current].width, wn.width][direction == "L"] if not x else x
@@ -65,7 +72,7 @@ def play(wn, dif):
 
             self.life = life
             self.dead = False
-            self.reach = 50
+            # self.reach = 50
             self.speed = 80
 
         def set_pos(self, x, y):
@@ -80,6 +87,10 @@ def play(wn, dif):
                 self.height = self.sprites[self.current].height
 
         def define_action(self, monsters, ein):
+            """
+            Essa função define a ação a ser tomada definida pelo contexto atual, por
+            isso passamos monsters e Ein
+            """
             if self.life == 0:
                 self.death()
                 return
@@ -136,20 +147,23 @@ def play(wn, dif):
     ein = Ein()
 
     monsters = [Skelly(life=2), Skelly(life=1, direction="R")]
+
     timer = time()
     mouse = wn.get_mouse()
     mt = time()
+
+    #############
+    # Game Loop #
+    #############
     while True:
         background.draw()
 
-        if time() - timer >= 3:
-            monsters.append(Skelly(life=1, direction="L"))
-            timer = float('inf')
         ein.update()
         ein.draw()
 
         mouse_over_monster = False
 
+        # Update os monstros
         for m in monsters[:]:
             # Para debuggar
             if mouse.is_over_object(m) and DEBUGGING:
