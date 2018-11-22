@@ -138,6 +138,97 @@ def play(wn, dif):
         def draw(self):
             self.sprites[self.current].draw(flip=[False, True][self.direction=="L"])
 
+    class Hellhound:
+        def __init__(self, life, direction="L", x=None):
+            # Dicionário com spritesheets para diferentes estados
+            self.sprites = {
+                'idle': Sprite(get_asset("hellhound{}PNG{}idle.png".format(sep,sep)), 6, size=(200,125)),
+                'walk': Sprite(get_asset("hellhound{}PNG{}walk.png".format(sep,sep)), 12, size=(200,125)),
+                'run': Sprite(get_asset("hellhound{}PNG{}run.png".format(sep,sep)), 5, size=(200,125))
+            }
+            # Setar duração da animação dos sprite sheets
+            for s in self.sprites.values():
+                s.set_total_duration(600)
+
+            self.current = 'run' # Estado atual
+
+            self.direction = direction
+            self.x = [-self.sprites[self.current].width, wn.width][direction == "L"] if not x else x
+            self.y = wn.height - 122 - self.sprites[self.current].height
+
+            self.width = self.sprites[self.current].width
+            self.height = self.sprites[self.current].height
+
+            self.life = life
+            self.dead = False
+            # self.reach = 50
+            self.speed = 120
+
+        def set_pos(self, x, y):
+            self.x = x
+            self.y = y
+
+        def change_sprite(self, sprite):
+            if self.current != sprite:
+                self.current = sprite
+                self.sprites[self.current].set_curr_frame = 0
+                self.width = self.sprites[self.current].width
+                self.height = self.sprites[self.current].height
+
+        def define_action(self, monsters, ein):
+            """
+           necessario mudaças porque o hellhound ta para como esqueleto
+            """
+            if self.life == 0:
+                self.death()
+                return
+            if self.direction == "L":
+                if ein.x + ein.width <= self.x <= ein.x+ein.width+ein.reach:
+                    self.set_pos(ein.x + ein.width + ein.reach, self.y)
+                    self.idle()
+                    return
+            else:
+                if ein.x - ein.reach <= self.x + self.width <= ein.x:
+                    self.set_pos(ein.x - ein.reach - self.width, self.y)
+                    self.idle()
+                    return
+            for m in monsters:
+                if self.direction == "L":
+                    if m.x <= self.x - 10 <= m.x + m.width:
+                        self.set_pos(m.x + m.width + 10, self.y)
+                        self.idle()
+                        return
+                else:
+                    if m.x <= self.x + self.width + 10 <= m.x + m.width:
+                        self.set_pos(m.x - self.width - 10, self.y)
+                        self.idle()
+                        return
+            self.move()
+
+        def idle(self):
+            self.change_sprite("idle")
+
+        def move(self):
+            self.change_sprite("run")
+            self.x += self.speed * wn.delta_time() * [-1, 1][self.direction=="R"]
+            
+        def death(self):
+            self.change_sprite("dead")
+            
+            if self.sprites[self.current].get_curr_frame() == self.sprites[self.current].get_final_frame() - 1:
+                self.dead = True
+            
+
+        def update(self):
+            self.sprites[self.current].set_position(self.x, self.y)
+            self.sprites[self.current].update()
+
+        def draw(self):
+            self.sprites[self.current].draw(flip=[False, True][self.direction=="R"])
+
+
+
+
     #############
     # Variables #
     #############
@@ -146,7 +237,7 @@ def play(wn, dif):
     background = GameImage(get_asset("bg.png"), (wn.width, wn.height))
     ein = Ein()
 
-    monsters = [Skelly(life=2), Skelly(life=1, direction="R")]
+    monsters = [Hellhound(life=2), Hellhound(life=1, direction="R")]
 
     timer = time()
     mouse = wn.get_mouse()
