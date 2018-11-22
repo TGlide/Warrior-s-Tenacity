@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from PPlay.window import *
 from PPlay.gameimage import *
 from PPlay.sprite import *
@@ -86,7 +88,7 @@ def play(wn, dif):
             self.change_sprite("idle")
 
         def move(self):
-
+            pass
 
         def update(self):
             self.sprites[self.current].set_position(self.x, self.y)
