@@ -227,9 +227,6 @@ def play(wn, dif):
         def draw(self):
             self.sprites[self.current].draw(flip=[False, True][self.direction=="R"])
 
-
-
-
     #############
     # Variables #
     #############
@@ -238,7 +235,7 @@ def play(wn, dif):
     background = GameImage(get_asset("bg.png"), (wn.width, wn.height))
     ein = Ein()
 
-    monsters = [Hellhound(life=2), Hellhound(life=1, direction="R")]
+    monsters = [Skelly(life=2), Skelly(life=1, direction="R")]
 
     timer = time()
     mouse = wn.get_mouse()
