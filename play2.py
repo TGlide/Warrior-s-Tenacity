@@ -19,12 +19,16 @@ def play(wn, dif):
             # Dicionário com spritesheets para diferentes estados
             self.sprites = {
                 'idle': Sprite(get_asset("ein{}idle.png".format(sep)), 4),
-                'attack': Sprite(get_asset("ein{}attack.png".format(sep)), 7),
+                'attack': Sprite(get_asset("ein{}attack2.png".format(sep)), 5),
                 'walk': Sprite(get_asset("ein{}walk.png".format(sep)), 6),
             }
             # Setar duração da animação dos sprite sheets
             for s in self.sprites.values():
+                if s == self.sprites['attack']:
+                    continue
                 s.set_total_duration(500)
+            self.sprites['attack'].set_loop(False)
+            self.sprites['attack'].set_total_duration(325)
 
             self.current = 'idle'  # Estado atual
             self.direction = "R"
@@ -37,12 +41,23 @@ def play(wn, dif):
 
             self.life = 6
             self.reach = 50  # Alcance de Ein ate os inimigos
+            self.action_timer = time()
+            self.walking = False
+            self.attacking = False
+
+            self.speed = 80
+            self.walking = False
 
         def set_pos(self, x, y):
             self.x = x
             self.y = y
 
+        def change_sprite(self, sprite):
+            self.current = sprite if self.current != sprite else self.current
+
         def action(self, kb, monsters):
+            if self.attacking: # TODO
+                return
             if kb.key_pressed("left"):
                 self.direction = "L"
             elif kb.key_pressed("right"):
@@ -53,16 +68,30 @@ def play(wn, dif):
                         if self.direction == "R":
                             if self.x + self.width <= m.x <= self.x + self.width + self.reach:
                                 if m.next_key() and kb.key_pressed(m.next_key().key):
-                                    print("FUCK")
-                                    m.next_key().press()
+                                    self.attack(m)
                         else:
                             if self.x - self.reach <= m.x + m.width <= self.x :
                                 if m.next_key() and kb.key_pressed(m.next_key().key):
-                                    print("FUCK")
                                     m.next_key().press()
+                                    self.attack()
            
+        
+        def attack(self, m):
+            if self.direction == "R":
+                if m.x > self.x + self.width:
+                    self.walking = True
+            self.change_sprite("attack")
+            self.sprites[self.current].set_curr_frame(0)
+            self.sprites[self.current].play()
+            self.attacking = True
+
+
 
         def update(self):
+            if self.current == "attack":
+                if not self.sprites[self.current].is_playing():
+                    self.change_sprite("idle")
+                    self.attacking = False
             self.sprites[self.current].set_position(self.x, self.y)
             self.sprites[self.current].update()
 
@@ -142,7 +171,7 @@ def play(wn, dif):
                 self.death()
                 return
             if self.direction == "R":
-                if ein.x + ein.width <= self.x <= ein.x+ein.width+ein.reach/4:
+                if wn.width/2 + ein.width/2 <= self.x <= wn.width/2 +ein.width/2+ein.reach/4:
                     self.set_pos(ein.x + ein.width + ein.reach/4, self.y)
                     self.idle()
                     return
