@@ -10,3 +10,9 @@ Projeto final para a aula de Lab Jogos, UFF 18.2
 [] Elementos de interface (vida, alcance,...)
 [] Waves e pontuação
 [] Power Ups
+
+## Membros
+
+Thomas Gouveia Lopes
+Lucas Tavares
+Lucas Amaral
