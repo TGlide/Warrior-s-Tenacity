@@ -144,7 +144,8 @@ def play(wn, dif):
             self.sprites = {
                 'idle': Sprite(get_asset("hellhound{}PNG{}idle.png".format(sep,sep)), 6, size=(200,125)),
                 'walk': Sprite(get_asset("hellhound{}PNG{}walk.png".format(sep,sep)), 12, size=(200,125)),
-                'run': Sprite(get_asset("hellhound{}PNG{}run.png".format(sep,sep)), 5, size=(200,125))
+                'run': Sprite(get_asset("hellhound{}PNG{}run.png".format(sep,sep)), 5, size=(200,125)),
+                'dead': Sprite(get_asset("skelly{}dead.png".format(sep)), 15, size=(150,125))
             }
             # Setar duração da animação dos sprite sheets
             for s in self.sprites.values():
@@ -274,7 +275,12 @@ def play(wn, dif):
         if mouse.is_button_pressed(1) and not mouse_over_monster and time() - mt > 0.5 and DEBUGGING:
             mt = time()
             mx = mouse.get_position()[0]
+            monsters.append(Hellhound(life=1, direction = ["R", "L"][mx >= wn.width/2], x=mx))
+        if mouse.is_button_pressed(3) and not mouse_over_monster and time() - mt > 0.5 and DEBUGGING:
+            mt = time()
+            mx = mouse.get_position()[0]
             monsters.append(Skelly(life=1, direction = ["R", "L"][mx >= wn.width/2], x=mx))
+
         # Fim debug
 
         wn.update()
