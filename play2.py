@@ -37,6 +37,26 @@ def play(wn, dif):
             self.life = 6
             self.reach = 50 # Alcance de Ein ate os inimigos
 
+            self.jumpspeed=600
+            self.jumpaux=self.jumpspeed
+            self.gravity=800
+
+        def jump(self):
+            self.y+=-self.jumpaux*wn.delta_time()
+            self.jumpaux-=self.gravity*wn.delta_time()
+            
+        def define_action(self):
+            
+            if self.jumpspeed!=self.jumpaux:
+                print(self.jumpaux)
+                self.jump()
+            if self.jumpspeed==self.jumpaux and keybord.key_pressed("UP"):
+                self.jumpaux-=1
+                print("O")
+                return
+            if self.jumpaux< -self.jumpspeed:
+                self.jumpaux=self.jumpspeed
+                self.x = wn.width/2 - self.sprites[self.current].width/2
         def set_pos(self, x, y):
             self.x = x
             self.y = y
@@ -229,6 +249,7 @@ def play(wn, dif):
 
     timer = time()
     mouse = wn.get_mouse()
+    keybord=wn.get_keyboard()
     mt = time()
 
     #############
@@ -236,7 +257,8 @@ def play(wn, dif):
     #############
     while True:
         background.draw()
-
+        
+        ein.define_action()
         ein.update()
         ein.draw()
 
