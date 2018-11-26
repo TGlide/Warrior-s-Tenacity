@@ -48,15 +48,16 @@ def play(wn, dif):
         def define_action(self):
             
             if self.jumpspeed!=self.jumpaux:
-                print(self.jumpaux)
+                
                 self.jump()
             if self.jumpspeed==self.jumpaux and keybord.key_pressed("UP"):
                 self.jumpaux-=1
-                print("O")
+                
                 return
             if self.jumpaux< -self.jumpspeed:
                 self.jumpaux=self.jumpspeed
-                self.x = wn.width/2 - self.sprites[self.current].width/2
+                self.y = wn.height - 122 - self.sprites[self.current].height
+
         def set_pos(self, x, y):
             self.x = x
             self.y = y
