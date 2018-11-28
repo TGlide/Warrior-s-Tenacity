@@ -23,8 +23,10 @@ def play(wn, dif):
                 'attack1': Sprite(get_asset("ein{}attack1.png".format(sep)), 5),
                 'attack2': Sprite(get_asset("ein{}attack2.png".format(sep)), 6),
                 'walk': Sprite(get_asset("ein{}walk.png".format(sep)), 6),
+                'jump': Sprite(get_asset("ein{}jump.png".format(sep)), 10),
             }
             # Setar duração da animação dos sprite sheets
+            self.sprites['jump'].set_loop(False)
             for i in range(1, 3):
                 self.sprites['attack' + str(i)].set_loop(False)
                 self.sprites['attack' + str(i)].set_total_duration(325)
@@ -40,7 +42,10 @@ def play(wn, dif):
             self.width = self.sprites[self.current].width
             self.height = self.sprites[self.current].height
 
-            self.life = 6
+            self.life = 3
+            self.life_sprites = [Sprite(get_asset("ein{}life.png".format(sep)), 2) for i in range(self.life)]
+            for s in self.life_sprites:
+                s.set_total_duration(1)
             self.reach = 50  # Alcance de Ein ate os inimigos
 
             self.rs_l = Sprite(get_asset("reach.png"), 1, size=(32, 60))
@@ -64,6 +69,10 @@ def play(wn, dif):
         def jump(self):
             self.y += -self.jumpaux*wn.delta_time()
             self.jumpaux -= self.gravity*wn.delta_time()
+            if self.current != "jump":
+                self.change_sprite("jump")
+                self.sprites[self.current].set_curr_frame(0)
+                self.sprites[self.current].play()
 
         def set_pos(self, x, y):
             self.x = x
@@ -81,6 +90,8 @@ def play(wn, dif):
             if self.jumpaux < -self.jumpspeed:
                 self.jumpaux = self.jumpspeed
                 self.y = wn.height - 122 - self.sprites[self.current].height
+                self.change_sprite('idle')
+
             if self.attacking:  # TODO
                 return
             if kb.key_pressed("left"):
@@ -96,7 +107,7 @@ def play(wn, dif):
                                     m.next_key().press()
                                     self.attack(m)
                         else:
-                            if self.x - self.reach <= m.x + m.width <= self.x:
+                            if self.x - self.reach <= m.x + m.width <= wn.width/2:
                                 if m.next_key() and kb.key_pressed(m.next_key().key):
                                     m.next_key().press()
                                     self.attack(m)
@@ -176,6 +187,7 @@ def play(wn, dif):
                 'dead': Sprite(get_asset("skelly{}dead.png".format(sep)), 15, size=(int(495*mf), int(32*mf))),
                 'hit': Sprite(get_asset("skelly{}hit.png".format(sep)), 8, size=(int(495*mf), int(32*mf))),
             }
+            self.sprites['attack']
             # Setar duração da animação dos sprite sheets
             for s in self.sprites.values():
                 s.set_total_duration(800)
@@ -196,6 +208,9 @@ def play(wn, dif):
             self.dead = False
             # self.reach = 50
             self.speed = 160
+
+            self.attack_interval = 2
+            self.attack_timer = time()
 
         def set_pos(self, x, y):
             self.x = x
@@ -219,14 +234,15 @@ def play(wn, dif):
             if self.direction == "R":
                 if wn.width/2 <= self.x <= ein.x + ein.width + ein.reach - 110:
                     self.set_pos(ein.x + ein.width + ein.reach - 110, self.y)
-                    self.idle()
+                    self.attack(ein)
                     return
             else:
-                if ein.x - ein.reach + 10 <= self.x + self.width <= ein.x:
-                    self.set_pos(ein.x - ein.reach + 10 - self.width, self.y)
-                    self.idle()
+                if ein.x - ein.reach + 110 <= self.x + self.width <= wn.width/2:
+                    self.set_pos(ein.x - ein.reach + 110 - self.width, self.y)
+                    self.attack(ein)
                     return
-            for m in list(filter(lambda x: type(x) != Hellhound, monsters)):
+
+            for m in list(filter(lambda x: type(x) != Hellhound and x.next_key(), monsters)):
                 if self.direction == "R":
                     if m.x <= self.x - 20 <= m.x + m.width:
                         self.set_pos(m.x + m.width + 20, self.y)
@@ -246,6 +262,9 @@ def play(wn, dif):
             self.change_sprite("walk")
             self.x += self.speed * wn.delta_time() * \
                 [-1, 1][self.direction == "L"]
+
+        def attack(self, ein):
+            self.change_sprite("attack")
 
         def death(self):
             self.change_sprite("dead")
@@ -373,7 +392,7 @@ def play(wn, dif):
     attack_pool_font = Font(str(ein.attack_pool), size=100)
     attack_pool_font.set_position(0, debug_font.height + 10)
 
-    monsters = [Hellhound(life=2), Hellhound(life=1, direction="R")]
+    monsters = []
 
     timer = time()
     mouse = wn.get_mouse()
