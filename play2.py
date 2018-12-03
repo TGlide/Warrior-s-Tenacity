@@ -42,11 +42,16 @@ def play(wn, dif):
             self.width = self.sprites[self.current].width
             self.height = self.sprites[self.current].height
 
-            self.life = 3
-            self.life_sprites = [Sprite(get_asset("ein{}life.png".format(sep)), 2) for i in range(self.life)]
+            self.life = 4
+            self.life_sprites = [Sprite(get_asset("ein{}life.png".format(sep)), 2,  size=(82,41)) for i in range(self.life)]
+            life_x_init = wn.width/2 - (self.life_sprites[0].width/2)*self.life
             for s in self.life_sprites:
                 s.set_total_duration(1)
-            self.reach = 50  # Alcance de Ein ate os inimigos
+                s.set_position(life_x_init, self.y + self.height + 30)
+                life_x_init += self.life_sprites[0].width
+            self.hit_timer = time()
+            
+            self.reach = 66  # Alcance de Ein ate os inimigos
 
             self.rs_l = Sprite(get_asset("reach.png"), 1, size=(32, 60))
             self.rs_l.set_position(
@@ -96,21 +101,38 @@ def play(wn, dif):
                 return
             if kb.key_pressed("left"):
                 self.direction = "L"
+                self.change_sprite("idle")
             elif kb.key_pressed("right"):
                 self.direction = "R"
+                self.change_sprite("idle")
             else:
-                for m in monsters:
-                    if m.direction == self.direction:
-                        if self.direction == "R":
-                            if wn.width/2 <= m.x <= self.x + self.width + self.reach:
-                                if m.next_key() and kb.key_pressed(m.next_key().key):
-                                    m.next_key().press()
-                                    self.attack(m)
-                        else:
-                            if self.x - self.reach <= m.x + m.width <= wn.width/2:
-                                if m.next_key() and kb.key_pressed(m.next_key().key):
-                                    m.next_key().press()
-                                    self.attack(m)
+                if self.direction == "R":
+                     monsters = list(sorted(filter(lambda m: m.direction == "R", monsters), key=lambda mon: mon.x))
+                     if monsters:
+                         m = monsters[0]
+                         if wn.width/2 <= m.x <= self.x+self.width + self.reach and m.next_key() and kb.key_pressed(m.next_key().key):            
+                             m.next_key().press()
+                             self.attack(m)
+                else:
+                    monsters = list(sorted(filter(lambda m: m.direction == "L", monsters), key=lambda mon: -mon.x))
+                    if monsters:
+                        m = monsters[0]
+                        if self.x - self.reach <= m.x + m.width <= wn.width/2 and m.next_key() and kb.key_pressed(m.next_key().key):            
+                            m.next_key().press()
+                            self.attack(m)
+
+                # for m in monsters:
+                #     if m.direction == self.direction:
+                #         if self.direction == "R":
+                #             if wn.width/2 <= m.x <= self.x + self.width + self.reach:
+                #                 if m.next_key() and kb.key_pressed(m.next_key().key):
+                #                     m.next_key().press()
+                #                     self.attack(m)
+                #         else:
+                #             if self.x - self.reach <= m.x  <= wn.width/2:
+                #                 if m.next_key() and kb.key_pressed(m.next_key().key):
+                #                     m.next_key().press()
+                #                     self.attack(m)
 
         def attack(self, m):
             # if self.direction == "R":
@@ -124,6 +146,12 @@ def play(wn, dif):
                 self.sprites[self.current].set_curr_frame(0)
                 self.sprites[self.current].play()
             self.attack_pool += 1
+
+        def take_hit(self):
+            if self.life > 0:
+                self.life -= 1
+                self.life_sprites[self.life].update()
+
 
         def update(self):
             # if self.current == "walk":
@@ -151,6 +179,8 @@ def play(wn, dif):
 
         def draw(self):
             self.sprites[self.current].draw(flip=self.direction == "L")
+            for l in self.life_sprites:
+                l.draw()
             self.rs_l.draw(flip=True)
             self.rs_r.draw()
 
@@ -177,22 +207,24 @@ def play(wn, dif):
             self.pressed = True
 
     class Skelly:
+        mf = 3.5
         def __init__(self, life, direction="L", x=None):
             # Dicionário com spritesheets para diferentes estados
-            mf = 3.5
+            
             self.sprites = {
-                'idle': Sprite(get_asset("skelly{}idle.png".format(sep)), 11, size=(int(264*mf), int(32*mf))),
-                'attack': Sprite(get_asset("skelly{}attack.png".format(sep)), 18),
-                'walk': Sprite(get_asset("skelly{}walk.png".format(sep)), 13, size=(int(286*mf), int(33*mf))),
-                'dead': Sprite(get_asset("skelly{}dead.png".format(sep)), 15, size=(int(495*mf), int(32*mf))),
-                'hit': Sprite(get_asset("skelly{}hit.png".format(sep)), 8, size=(int(495*mf), int(32*mf))),
+                'idle': Sprite(get_asset("skelly{}idle.png".format(sep)), 11, size=(int(264*self.mf), int(32*self.mf))),
+                'attack': Sprite(get_asset("skelly{}attack.png".format(sep)), 18, size=(int(774*self.mf), int(37*self.mf))),
+                'walk': Sprite(get_asset("skelly{}walk.png".format(sep)), 13, size=(int(286*self.mf), int(33*self.mf))),
+                'dead': Sprite(get_asset("skelly{}dead.png".format(sep)), 15, size=(int(495*self.mf), int(32*self.mf))),
+                'hit': Sprite(get_asset("skelly{}hit.png".format(sep)), 8, size=(int(495*self.mf), int(32*self.mf))),
             }
-            self.sprites['attack']
             # Setar duração da animação dos sprite sheets
             for s in self.sprites.values():
-                s.set_total_duration(800)
+                s.set_total_duration(1200)
 
             self.current = 'walk'  # Estado atual
+
+            self.attacked = False # Auxiliar para impedir multiplos ataques a Ein
 
             self.direction = direction
             self.x = [-self.sprites[self.current].width,
@@ -203,11 +235,17 @@ def play(wn, dif):
             self.height = self.sprites[self.current].height
 
             self.life = life
-            self.keys = [Key() for i in range(life)]
+            self.pts = life*10
+            self.keys = []
+            last_key = None
+            for i in range(life):
+                key = choice(list(filter(lambda k: k!= last_key, Key.keys)))
+                last_key = key
+                self.keys.append(Key(k=key))
 
             self.dead = False
             # self.reach = 50
-            self.speed = 160
+            self.speed = 100
 
             self.attack_interval = 2
             self.attack_timer = time()
@@ -218,10 +256,15 @@ def play(wn, dif):
 
         def change_sprite(self, sprite):
             if self.current != sprite:
+                if self.current == "attack":
+                    self.y += 5*self.mf
                 self.current = sprite
                 self.sprites[self.current].set_curr_frame = 0
                 self.width = self.sprites[self.current].width
                 self.height = self.sprites[self.current].height
+                if self.current == "attack":
+                    self.y -= 5*self.mf
+
 
         def define_action(self, monsters, ein):
             """
@@ -231,29 +274,38 @@ def play(wn, dif):
             if self.life == 0:
                 self.death()
                 return
-            if self.direction == "R":
-                if wn.width/2 <= self.x <= ein.x + ein.width + ein.reach - 110:
-                    self.set_pos(ein.x + ein.width + ein.reach - 110, self.y)
-                    self.attack(ein)
-                    return
-            else:
-                if ein.x - ein.reach + 110 <= self.x + self.width <= wn.width/2:
-                    self.set_pos(ein.x - ein.reach + 110 - self.width, self.y)
-                    self.attack(ein)
-                    return
-
-            for m in list(filter(lambda x: type(x) != Hellhound and x.next_key(), monsters)):
+            if self.current != "attack":
                 if self.direction == "R":
-                    if m.x <= self.x - 20 <= m.x + m.width:
-                        self.set_pos(m.x + m.width + 20, self.y)
-                        self.idle()
+                    if wn.width/2 <= self.x <= ein.x + ein.width + ein.reach - 129:
+                        self.set_pos(ein.x + ein.width + ein.reach - 129, self.y)
+                        self.attack(ein)
                         return
                 else:
-                    if m.x <= self.x + self.width + 20 <= m.x + m.width:
-                        self.set_pos(m.x - self.width - 20, self.y)
-                        self.idle()
+                    if self.x + self.width >= ein.x - 5:
+                        self.set_pos(ein.x - 10 - self.width, self.y)
+                        self.attack(ein)
                         return
-            self.move()
+
+                for m in list(filter(lambda x: type(x) != Hellhound and x.next_key() and x!=self, monsters)):
+                    if self.direction == "R":
+                        if m.x <= self.x - 20 <= m.x + m.width:
+                            self.set_pos(m.x + m.width + 20, self.y)
+                            self.idle()
+                            return
+                    else:
+                        if m.x <= self.x + self.width + 20 <= m.x + m.width:
+                            self.set_pos(m.x - self.width - 20, self.y)
+                            self.idle()
+                            return
+                self.move()
+            else:
+                if self.sprites[self.current].curr_frame == 0:
+                    self.attacked = False
+                if 8 <= self.sprites[self.current].curr_frame <= 14 and self.sprites[self.current].collided(ein.sprites[ein.current]) and not self.attacked:
+                    ein.take_hit()
+                    self.attacked = True
+
+            
 
         def idle(self):
             self.change_sprite("idle")
@@ -380,6 +432,18 @@ def play(wn, dif):
         def next_key(self):
             return None
 
+    class Score(Font):
+        def __init__(self):
+            Font.__init__(self, "0", font_family=font_path("MatchupPro.ttf"), size=42, color=(255,255,255))
+            self.set_position(wn.width/2 - self.width/2, 30)
+            self.score = 0
+
+        def add(self, pts):
+            self.score += pts
+            self.change_text(str(self.score))
+            self.set_position(wn.width/2 - self.width/2, self.y)
+            
+
     #############
     # Variables #
     #############
@@ -387,10 +451,13 @@ def play(wn, dif):
 
     background = GameImage(get_asset("bg.png"), (wn.width, wn.height))
     ein = Ein()
+    
     debug_font = Font(ein.current, size=100)
     debug_font.set_position(0, 0)
     attack_pool_font = Font(str(ein.attack_pool), size=100)
     attack_pool_font.set_position(0, debug_font.height + 10)
+
+    score = Score()
 
     monsters = []
 
@@ -405,6 +472,7 @@ def play(wn, dif):
     #############
     while True:
         background.draw()
+        score.draw()
 
         ein.action(kb, monsters)
         ein.update()
@@ -417,6 +485,12 @@ def play(wn, dif):
         attack_pool_font.draw()
 
         mouse_over_monster = False
+
+        # Spawn monsters
+        if choice((0,10000)) >= 9990 and len(monsters) < 3:
+            dirc = choice(["L","R"])
+            x = 0 if dirc == "L" else wn.width
+            monsters.append(Skelly(life=choice(list(range(1, 5))), direction=dirc, x=x))
 
         # Update os monstros
         for m in monsters[:]:
@@ -433,6 +507,7 @@ def play(wn, dif):
             m.update()
             m.draw()
             if m.dead:
+                score.add(m.pts)
                 monsters.remove(m)
 
         # Para debuggar
