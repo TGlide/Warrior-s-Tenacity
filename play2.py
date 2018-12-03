@@ -72,7 +72,7 @@ def play(wn, dif):
 
             self.jumpspeed = 1200
             self.jumpaux = self.jumpspeed
-            self.gravity = 3000
+            self.gravity = 2700
 
         def jump(self):
             self.y += -self.jumpaux*wn.delta_time()
