@@ -2,9 +2,11 @@
 
 from PPlay.window import *
 from PPlay.gameimage import *
+from PPlay.gameobject import *
 from PPlay.sprite import *
 from PPlay.sound import *
 from PPlay.font import *
+
 from time import sleep, time
 from os import getcwd, sep
 from random import choice
@@ -109,14 +111,14 @@ def play(wn, dif):
                     self.change_sprite("idle")
             else:
                 if self.direction == "R":
-                     monsters = list(sorted(filter(lambda m: m.direction == "R" and m.next_key(), monsters), key=lambda mon: mon.x))
+                     monsters = list(sorted(filter(lambda m:m.next_key() and m.sprites[m.current].x + m.sprites[m.current].width/2 > wn.width/2, monsters), key=lambda mon: mon.x))
                      if monsters:
                          m = monsters[0]
                          if wn.width/2 <= m.x <= self.x+self.width + self.reach and m.next_key() and kb.key_pressed(m.next_key().key):            
                              m.next_key().press()
                              self.attack(m)
                 else:
-                    monsters = list(sorted(filter(lambda m: m.direction == "L" and m.next_key(), monsters), key=lambda mon: -mon.x))
+                    monsters = list(sorted(filter(lambda m: m.next_key() and m.sprites[m.current].x + m.sprites[m.current].width/2 < wn.width/2, monsters), key=lambda mon: -mon.x))
                     if monsters:
                         m = monsters[0]
                         if self.x - self.reach <= m.x + m.width <= wn.width/2 and m.next_key() and kb.key_pressed(m.next_key().key):            
@@ -153,6 +155,10 @@ def play(wn, dif):
             if self.life > 0:
                 self.life -= 1
                 self.life_sprites[self.life].update()
+            else:
+                self.life = len(self.life_sprites)
+                for s in self.life_sprites:
+                    s.update()
 
 
         def update(self):
@@ -175,7 +181,8 @@ def play(wn, dif):
                         self.change_sprite("attack" + str(next_attack))
                         self.sprites[self.current].set_curr_frame(0)
                         self.sprites[self.current].play()
-
+            else:
+                self.attack_pool = 0
             self.sprites[self.current].set_position(self.x, self.y)
             self.sprites[self.current].update()
 
@@ -187,7 +194,7 @@ def play(wn, dif):
             self.rs_r.draw()
 
     class Key:
-        keys = "zxas"
+        keys = "asd"
 
         def __init__(self, k=None):
             if not k:
@@ -221,8 +228,9 @@ def play(wn, dif):
                 'hit': Sprite(get_asset("skelly{}hit.png".format(sep)), 8, size=(int(495*self.mf), int(32*self.mf))),
             }
             # Setar duração da animação dos sprite sheets
+            self.sprites['attack'].set_total_duration(1500)
             for s in self.sprites.values():
-                s.set_total_duration(1200)
+                s.set_total_duration(750)
 
             self.current = 'walk'  # Estado atual
 
@@ -248,9 +256,6 @@ def play(wn, dif):
             self.dead = False
             # self.reach = 50
             self.speed = 120
-
-            self.attack_interval = 2
-            self.attack_timer = time()
 
         def set_pos(self, x, y):
             self.x = x
@@ -303,7 +308,7 @@ def play(wn, dif):
             else:
                 if self.sprites[self.current].curr_frame == 0:
                     self.attacked = False
-                if 8 <= self.sprites[self.current].curr_frame <= 14 and self.sprites[self.current].collided(ein.sprites[ein.current]) and not self.attacked:
+                if 7 <= self.sprites[self.current].curr_frame <= 9 and self.sprites[self.current].collided(ein.sprites[ein.current]) and not self.attacked:
                     ein.take_hit()
                     self.attacked = True
 
@@ -354,12 +359,13 @@ def play(wn, dif):
             return None
 
     class Hellhound:
+        mf = 3
         def __init__(self, life, direction="L", x=None):
             # Dicionário com spritesheets para diferentes estados
             self.sprites = {
                 'idle': Sprite(get_asset("hellhound{}PNG{}idle.png".format(sep, sep)), 6, size=(1000, 125)),
                 'walk': Sprite(get_asset("hellhound{}PNG{}walk.png".format(sep, sep)), 12, size=(1000, 125)),
-                'run': Sprite(get_asset("hellhound{}PNG{}run.png".format(sep, sep)), 5, size=(1000, 125)),
+                'run': Sprite(get_asset("hellhound{}PNG{}run.png".format(sep, sep)), 5, size=(int(225*self.mf), int(32*self.mf))),
                 'dead': Sprite(get_asset("skelly{}dead.png".format(sep)), 15, size=(1000, 125))
             }
             # Setar duração da animação dos sprite sheets
@@ -368,18 +374,31 @@ def play(wn, dif):
 
             self.current = 'run'  # Estado atual
 
+            self.attacked = False # Auxiliar para impedir multiplos ataques a Ein
+            self.coll_obj = GameObject() # Auxiliar para detectar colisão com Ein
+            self.coll_obj.x = wn.width/2 - 40
+            self.coll_obj.width = 80
+
             self.direction = direction
             self.x = [-self.sprites[self.current].width,
-                      wn.width][direction == "L"] if not x else x
+                      wn.width][direction == "R"] if not x else x
             self.y = wn.height - 122 - self.sprites[self.current].height
 
             self.width = self.sprites[self.current].width
             self.height = self.sprites[self.current].height
 
             self.life = life
+            self.pts = life*5
+            self.keys = []
+            last_key = None
+            for i in range(life):
+                key = choice(list(filter(lambda k: k!= last_key, Key.keys)))
+                last_key = key
+                self.keys.append(Key(k=key))
+
             self.dead = False
             # self.reach = 50
-            self.speed = 250
+            self.speed = 300
 
         def set_pos(self, x, y):
             self.x = x
@@ -399,14 +418,24 @@ def play(wn, dif):
             if self.life == 0:
                 self.death()
                 return
-            if self.x > wn.width and self.direction == "R":
 
-                self.direction = "L"
-                self.speed = self.speed
-            if self.x < 0-self.width and self.direction == "L":
+            
+            self.coll_obj.y = ein.y
+            self.coll_obj.height = ein.height
 
+            if self.sprites[self.current].collided(self.coll_obj) and not self.attacked:
+                ein.take_hit()
+                self.attacked = True
+
+            if self.x > wn.width and self.direction == "L":
+                self.attacked = False
                 self.direction = "R"
                 self.speed = self.speed
+            elif self.x < 0-self.width and self.direction == "R":
+                self.attacked = False
+                self.direction = "L"
+                self.speed = self.speed
+            
             self.move()
 
         def idle(self):
@@ -415,7 +444,7 @@ def play(wn, dif):
         def move(self):
             self.change_sprite("run")
             self.x += self.speed * wn.delta_time() * \
-                [-1, 1][self.direction == "R"]
+                [-1, 1][self.direction == "L"]
 
         def death(self):
             self.change_sprite("dead")
@@ -427,16 +456,32 @@ def play(wn, dif):
             self.sprites[self.current].set_position(self.x, self.y)
             self.sprites[self.current].update()
 
+            if self.keys:
+                k_width = self.keys[0].sprite.width
+                k_height = self.keys[0].sprite.height
+                x_init = self.x + self.width/2 - (k_width/2)*len(self.keys)
+                self.life = 0
+                for k in range(len(self.keys)):
+                    self.keys[k].set_position(x_init, self.y - k_height - 10)
+                    x_init += k_width
+                    if not self.keys[k].pressed:
+                        self.life += 1
+
         def draw(self):
             self.sprites[self.current].draw(
-                flip=[False, True][self.direction == "R"])
+                flip=[False, True][self.direction == "L"])
+            for k in self.keys:
+                k.draw()
         
         def next_key(self):
+            for k in self.keys:
+                if not k.pressed:
+                    return k
             return None
 
     class Score(Font):
         def __init__(self):
-            Font.__init__(self, "0", font_family=font_path("MatchupPro.ttf"), size=42, color=(255,255,255))
+            Font.__init__(self, "0", font_family=font_path("MatchupPro"), size=42, color=(255,255,255), local_font=True)
             self.set_position(wn.width/2 - self.width/2, 30)
             self.score = 0
 
@@ -459,6 +504,10 @@ def play(wn, dif):
     debug_font.set_position(0, 0)
     attack_pool_font = Font(str(ein.attack_pool), size=100)
     attack_pool_font.set_position(0, debug_font.height + 10)
+    fps_font = Font("FPS: 0", size=42)
+    fps_font.set_position(wn.width - fps_font.width, 0)
+    fps_timer = time()
+    frame_count = 0
 
     wave = 1
     score = Score()
@@ -471,12 +520,21 @@ def play(wn, dif):
 
     mt = time()
 
+
     #############
     # Game Loop #
     #############
     while True:
         background.draw()
         score.draw()
+        
+        frame_count += 1
+        if time() - fps_timer >= 1:
+            fps_font.change_text("FPS: " + str(frame_count))
+            frame_count = 0
+            fps_timer = time()
+        fps_font.set_position(wn.width - fps_font.width, 0)
+        fps_font.draw()
 
         ein.action(kb, monsters)
         ein.update()
@@ -488,15 +546,21 @@ def play(wn, dif):
         attack_pool_font.change_text(str(ein.attack_pool))
         attack_pool_font.draw()
 
-        mouse_over_monster = False
-
         # Spawn monsters
-        if choice((0,10000)) >= 9999 and len(monsters) < 3 and time() - spawn_timer > 1:
+        if time() - spawn_timer > 0.5: # Interval0
             spawn_timer = time()
-            dirc = choice(["L","R"])
-            x = 0 if dirc == "L" else wn.width
-            monsters.append(Skelly(life=choice(list(range(1, 5))), direction=dirc, x=x))
+            if choice((0,100)) >= 95 and len(monsters) < 5:
+                dirc = choice(["L","R"]) # Escolher direção aleatória pro inimigo
+                x = 0 if dirc == "L" else wn.width 
+                
+                if len([m for m in monsters if type(m) == Hellhound]) < 1: # Permitir apenas n hellhounds ao mesmo tempo
+                    monster = 'Skelly' if choice((0,10)) > 9 else 'Hellhound'
+                else:
+                    monster = 'Skelly'
+                monsters.append(eval(monster)(life=choice(list(range(1, 4))), direction=dirc, x=x))
 
+
+        mouse_over_monster = False
         # Update os monstros
         for m in monsters[:]:
             # Para debuggar
@@ -521,7 +585,7 @@ def play(wn, dif):
             mt = time()
             mx = mouse.get_position()[0]
             monsters.append(Hellhound(life=1, direction=[
-                            "R", "L"][mx >= wn.width/2], x=mx))
+                            "L", "R"][mx >= wn.width/2], x=mx))
         if mouse.is_button_pressed(3) and not mouse_over_monster and time() - mt > 0.5 and DEBUGGING:
             mt = time()
             mx = mouse.get_position()[0]
@@ -530,6 +594,7 @@ def play(wn, dif):
         # Fim debug
 
         wn.update()
+
 
 
 if __name__ == "__main__":
