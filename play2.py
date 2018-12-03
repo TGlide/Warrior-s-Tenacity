@@ -101,20 +101,22 @@ def play(wn, dif):
                 return
             if kb.key_pressed("left"):
                 self.direction = "L"
-                self.change_sprite("idle")
+                if self.current != "jump":
+                    self.change_sprite("idle")
             elif kb.key_pressed("right"):
                 self.direction = "R"
-                self.change_sprite("idle")
+                if self.current != "jump":
+                    self.change_sprite("idle")
             else:
                 if self.direction == "R":
-                     monsters = list(sorted(filter(lambda m: m.direction == "R", monsters), key=lambda mon: mon.x))
+                     monsters = list(sorted(filter(lambda m: m.direction == "R" and m.next_key(), monsters), key=lambda mon: mon.x))
                      if monsters:
                          m = monsters[0]
                          if wn.width/2 <= m.x <= self.x+self.width + self.reach and m.next_key() and kb.key_pressed(m.next_key().key):            
                              m.next_key().press()
                              self.attack(m)
                 else:
-                    monsters = list(sorted(filter(lambda m: m.direction == "L", monsters), key=lambda mon: -mon.x))
+                    monsters = list(sorted(filter(lambda m: m.direction == "L" and m.next_key(), monsters), key=lambda mon: -mon.x))
                     if monsters:
                         m = monsters[0]
                         if self.x - self.reach <= m.x + m.width <= wn.width/2 and m.next_key() and kb.key_pressed(m.next_key().key):            
@@ -245,7 +247,7 @@ def play(wn, dif):
 
             self.dead = False
             # self.reach = 50
-            self.speed = 100
+            self.speed = 120
 
             self.attack_interval = 2
             self.attack_timer = time()
@@ -450,6 +452,7 @@ def play(wn, dif):
     DEBUGGING = True
 
     background = GameImage(get_asset("bg.png"), (wn.width, wn.height))
+
     ein = Ein()
     
     debug_font = Font(ein.current, size=100)
@@ -457,11 +460,12 @@ def play(wn, dif):
     attack_pool_font = Font(str(ein.attack_pool), size=100)
     attack_pool_font.set_position(0, debug_font.height + 10)
 
+    wave = 1
     score = Score()
-
     monsters = []
+    killed_monsters = 0
 
-    timer = time()
+    spawn_timer = time()
     mouse = wn.get_mouse()
     kb = wn.get_keyboard()
 
@@ -487,7 +491,8 @@ def play(wn, dif):
         mouse_over_monster = False
 
         # Spawn monsters
-        if choice((0,10000)) >= 9990 and len(monsters) < 3:
+        if choice((0,10000)) >= 9999 and len(monsters) < 3 and time() - spawn_timer > 1:
+            spawn_timer = time()
             dirc = choice(["L","R"])
             x = 0 if dirc == "L" else wn.width
             monsters.append(Skelly(life=choice(list(range(1, 5))), direction=dirc, x=x))
@@ -509,6 +514,7 @@ def play(wn, dif):
             if m.dead:
                 score.add(m.pts)
                 monsters.remove(m)
+                killed_monsters += 1
 
         # Para debuggar
         if mouse.is_button_pressed(1) and not mouse_over_monster and time() - mt > 0.5 and DEBUGGING:
