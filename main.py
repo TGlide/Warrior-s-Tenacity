@@ -3,7 +3,7 @@ import random
 
 from PPlay.window import *
 from menu import menu
-from play import play
+from play2 import play
 from dificuldade import dificuldade
 
 ##################
@@ -11,7 +11,7 @@ from dificuldade import dificuldade
 ##################
 
 WIN_W = 1366
-WIN_H = 768
+WIN_H = 918
 DIFICULDADE = 1
 
 #############
