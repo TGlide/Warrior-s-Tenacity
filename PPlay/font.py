@@ -30,8 +30,9 @@ class Font():
         self.x = x
         self.y = y
 
-    def change_text(self, text):
+    def change_text(self, text, color=None):
         self.text = text
+        self.color = color if color else self.color
         self.surface = self.font.render(text, self.aa, self.color)
 
         self.width = self.surface.get_width()
