@@ -8,7 +8,6 @@ from PPlay.sound import *
 from PPlay.font import *
 
 
-
 from time import sleep, time
 from os import getcwd, sep
 from random import choice, randint
@@ -19,8 +18,36 @@ def play(wn, dif):
     ###########
     # Classes #
     ###########
+    class Attribute:
+        mf = 3
+
+        def __init__(self, attr):
+            self.icon = Sprite(get_sprite("attribute{}{}.png".format(
+                os.sep, attr)), size=(16*self.mf, 16*self.mf))
+            self.levels = [Sprite(get_sprite("attribute{}{}_level.png".format(
+                os.sep, attr)), size=(32*self.mf, 16*self.mf), frames=2) for i in range(5)]
+            for l in self.levels:
+                l.set_total_duration(1)
+            self.level = 0
+
+        def set_position(self, x, y):
+            self.icon.set_position(x, y)
+            for i in range(len(self.levels)):
+                self.levels[i].set_position(
+                    self.icon.x + self.icon.width + (self.levels[0].width)*i, y)
+
+        def add(self):
+            self.levels[self.level].update()
+            self.level += 1
+
+        def draw(self):
+            self.icon.draw()
+            for l in self.levels:
+                l.draw()
+
     class Ein:
-        cps = 10 # Characters per second permitted
+        cps = 10  # Characters per second permitted
+
         def __init__(self):
             # Dicionário com spritesheets para diferentes estados
             self.sprites = {
@@ -48,14 +75,15 @@ def play(wn, dif):
             self.height = self.sprites[self.current].height
 
             self.life = 3
-            self.life_sprites = [Sprite(get_sprite("ein{}life.png".format(sep)), 2,  size=(82,41)) for i in range(self.life)]
+            self.life_sprites = [Sprite(get_sprite("ein{}life.png".format(
+                sep)), 2,  size=(82, 41)) for i in range(self.life)]
             life_x_init = wn.width/2 - (self.life_sprites[0].width/2)*self.life
             for s in self.life_sprites:
                 s.set_total_duration(1)
                 s.set_position(life_x_init, self.y + self.height + 30)
                 life_x_init += self.life_sprites[0].width
             self.hit_timer = time()
-            
+
             self.reach = 70  # Alcance de Ein ate os inimigos
 
             self.rs_l = Sprite(get_sprite("reach.png"), 1, size=(32, 60))
@@ -91,9 +119,11 @@ def play(wn, dif):
         def powerup(self, power):
             if power == "life":
                 self.life += 2
-                self.life_sprites.append(Sprite(get_sprite("ein{}life.png".format(sep)), 2,  size=(82,41)))
+                self.life_sprites.append(
+                    Sprite(get_sprite("ein{}life.png".format(sep)), 2,  size=(82, 41)))
                 self.take_hit()
-                life_x_init = wn.width/2 - (self.life_sprites[0].width/2)*len(self.life_sprites)
+                life_x_init = wn.width/2 - \
+                    (self.life_sprites[0].width/2)*len(self.life_sprites)
                 for s in self.life_sprites:
                     s.set_total_duration(1)
                     s.set_position(life_x_init, self.y + self.height + 30)
@@ -102,10 +132,9 @@ def play(wn, dif):
             elif power == "reach":
                 self.reach += 10
                 self.rs_l.set_position(
-                self.x - self.reach - self.rs_l.width, self.y+self.height-self.rs_l.height/2)
+                    self.x - self.reach - self.rs_l.width, self.y+self.height-self.rs_l.height/2)
                 self.rs_r.set_position(
                     self.x + self.width + self.reach, self.y+self.height-self.rs_r.height/2)
-
 
         def change_sprite(self, sprite):
             self.current = sprite if self.current != sprite else self.current
@@ -135,58 +164,43 @@ def play(wn, dif):
             else:
                 if time() - self.attack_timer >= 1/self.cps:
                     if self.direction == "R":
-                        monsters = list(sorted(filter(lambda m:m.next_key() and m.sprites[m.current].x + m.sprites[m.current].width/2 > wn.width/2, monsters), key=lambda mon: mon.x))
+                        monsters = list(sorted(filter(lambda m: m.next_key(
+                        ) and m.sprites[m.current].x + m.sprites[m.current].width/2 > wn.width/2, monsters), key=lambda mon: mon.x))
                         for m in monsters:
-                            if wn.width/2 <= m.x <= self.x+self.width + self.reach and m.next_key() and kb.key_pressed(m.next_key().key):            
+                            if wn.width/2 <= m.x <= self.x+self.width + self.reach and m.next_key() and kb.key_pressed(m.next_key().key):
                                 self.attack_timer = time()
                                 m.next_key().press()
                                 self.attack(m)
                                 attack_sfx.play()
-                                
+
                     else:
-                        monsters = list(sorted(filter(lambda m: m.next_key() and m.sprites[m.current].x + m.sprites[m.current].width/2 < wn.width/2, monsters), key=lambda mon: -mon.x))
+                        monsters = list(sorted(filter(lambda m: m.next_key(
+                        ) and m.sprites[m.current].x + m.sprites[m.current].width/2 < wn.width/2, monsters), key=lambda mon: -mon.x))
                         for m in monsters:
-                            if self.x - self.reach <= m.x + m.width <= wn.width/2 and m.next_key() and kb.key_pressed(m.next_key().key):            
+                            if self.x - self.reach <= m.x + m.width <= wn.width/2 and m.next_key() and kb.key_pressed(m.next_key().key):
                                 self.attack_timer = time()
                                 m.next_key().press()
                                 self.attack(m)
                                 attack_sfx.play()
-                # for m in monsters:
-                #     if m.direction == self.direction:
-                #         if self.direction == "R":
-                #             if wn.width/2 <= m.x <= self.x + self.width + self.reach:
-                #                 if m.next_key() and kb.key_pressed(m.next_key().key):
-                #                     m.next_key().press()
-                #                     self.attack(m)
-                #         else:
-                #             if self.x - self.reach <= m.x  <= wn.width/2:
-                #                 if m.next_key() and kb.key_pressed(m.next_key().key):
-                #                     m.next_key().press()
-                #                     self.attack(m)
 
         def attack(self, m):
-            # if self.direction == "R":
-            #     if m.x > self.x + self.width + 10:
-            #         print("fuck")
-            #         self.change_sprite("walk")
-            #         self.dest = m
-            #         return
             if "attack" not in self.current:
                 self.change_sprite("attack1")
                 self.sprites[self.current].set_curr_frame(0)
                 self.sprites[self.current].play()
-            self.attack_pool += 1
+            else:
+                self.attack_pool += 1
 
         def take_hit(self):
             if self.life > 0:
                 self.life -= 1
                 for i in range(len(self.life_sprites)):
-                    self.life_sprites[i].set_curr_frame(0 if i < self.life else 1)
+                    self.life_sprites[i].set_curr_frame(
+                        0 if i < self.life else 1)
             else:
                 self.life = len(self.life_sprites)
                 for s in self.life_sprites:
                     s.update()
-
 
         def update(self):
             # if self.current == "walk":
@@ -198,18 +212,16 @@ def play(wn, dif):
 
             if "attack" in self.current:  # Se estiver atacando
                 # Acabou uma animação de ataque
-                if not self.sprites[self.current].is_playing():
+                if self.attack_pool > 0:
                     self.attack_pool -= 1
-                    if self.attack_pool == 0:
-                        self.attacking = False
-                        self.change_sprite("idle")
-                    else:
-                        next_attack = int(self.current[-1]) % 2 + 1
-                        self.change_sprite("attack" + str(next_attack))
-                        self.sprites[self.current].set_curr_frame(0)
-                        self.sprites[self.current].play()
-            else:
-                self.attack_pool = 0
+                    next_attack = int(self.current[-1]) % 2 + 1
+                    self.change_sprite("attack" + str(next_attack))
+                    self.sprites[self.current].set_curr_frame(0)
+                    self.sprites[self.current].play()
+
+                elif not self.sprites[self.current].is_playing():
+                    self.change_sprite("idle")
+
             self.sprites[self.current].set_position(self.x, self.y)
             self.sprites[self.current].update()
 
@@ -244,9 +256,10 @@ def play(wn, dif):
 
     class Skelly:
         mf = 3.5
+
         def __init__(self, life, direction="L", x=None):
             # Dicionário com spritesheets para diferentes estados
-            
+
             self.sprites = {
                 'idle': Sprite(get_sprite("skelly{}idle.png".format(sep)), 11, size=(int(264*self.mf), int(32*self.mf))),
                 'attack': Sprite(get_sprite("skelly{}attack.png".format(sep)), 18, size=(int(774*self.mf), int(37*self.mf))),
@@ -261,7 +274,7 @@ def play(wn, dif):
 
             self.current = 'walk'  # Estado atual
 
-            self.attacked = False # Auxiliar para impedir multiplos ataques a Ein
+            self.attacked = False  # Auxiliar para impedir multiplos ataques a Ein
 
             self.direction = direction
             self.x = [-self.sprites[self.current].width,
@@ -276,7 +289,7 @@ def play(wn, dif):
             self.keys = []
             last_key = None
             for i in range(life):
-                key = choice(list(filter(lambda k: k!= last_key, Key.keys)))
+                key = choice(list(filter(lambda k: k != last_key, Key.keys)))
                 last_key = key
                 self.keys.append(Key(k=key))
 
@@ -290,15 +303,14 @@ def play(wn, dif):
 
         def change_sprite(self, sprite):
             if self.current != sprite:
-                if self.current == "attack": # Remove attack offset
+                if self.current == "attack":  # Remove attack offset
                     self.y += 5*self.mf
                 self.current = sprite
                 self.sprites[self.current].set_curr_frame(0)
                 self.width = self.sprites[self.current].width
                 self.height = self.sprites[self.current].height
-                if self.current == "attack": # Add attack offset
+                if self.current == "attack":  # Add attack offset
                     self.y -= 5*self.mf
-
 
         def define_action(self, monsters, ein):
             """
@@ -310,17 +322,17 @@ def play(wn, dif):
                 return
             if self.current != "attack":
                 if self.direction == "R":
-                    if self.x <= ein.x +ein.width - 20:
+                    if self.x <= ein.x + ein.width - 20:
                         self.set_pos(ein.x + ein.width - 70, self.y)
-                        self.attack(ein)                
+                        self.attack(ein)
                         return
                 else:
                     if self.x + self.width >= ein.x - 5:
-                        self.set_pos(ein.x - 10 - self.width, self.y)                        
-                        self.attack(ein)                        
+                        self.set_pos(ein.x - 10 - self.width, self.y)
+                        self.attack(ein)
                         return
 
-                for m in list(filter(lambda x: type(x) != Hellhound and x.next_key() and x!=self, monsters)):
+                for m in list(filter(lambda x: type(x) != Hellhound and x.next_key() and x != self, monsters)):
                     if self.direction == "R":
                         if m.x <= self.x - 20 <= m.x + m.width:
                             self.set_pos(m.x + m.width + 20, self.y)
@@ -332,14 +344,12 @@ def play(wn, dif):
                             self.idle()
                             return
                 self.move()
-            else:                
+            else:
                 if self.sprites[self.current].curr_frame == 0:
                     self.attacked = False
                 if 7 <= self.sprites[self.current].curr_frame <= 9 and self.sprites[self.current].collided(ein.sprites[ein.current]) and not self.attacked:
                     ein.take_hit()
                     self.attacked = True
-
-            
 
         def idle(self):
             self.change_sprite("idle")
@@ -387,6 +397,7 @@ def play(wn, dif):
 
     class Hellhound:
         mf = 2.5
+
         def __init__(self, life, direction="L", x=None):
             # Dicionário com spritesheets para diferentes estados
             self.sprites = {
@@ -401,8 +412,8 @@ def play(wn, dif):
 
             self.current = 'run'  # Estado atual
 
-            self.attacked = False # Auxiliar para impedir multiplos ataques a Ein
-            self.coll_obj = GameObject() # Auxiliar para detectar colisão com Ein
+            self.attacked = False  # Auxiliar para impedir multiplos ataques a Ein
+            self.coll_obj = GameObject()  # Auxiliar para detectar colisão com Ein
             self.coll_obj.x = wn.width/2 - 5
             self.coll_obj.width = 10
 
@@ -419,7 +430,7 @@ def play(wn, dif):
             self.keys = []
             last_key = None
             for i in range(life):
-                key = choice(list(filter(lambda k: k!= last_key, Key.keys)))
+                key = choice(list(filter(lambda k: k != last_key, Key.keys)))
                 last_key = key
                 self.keys.append(Key(k=key))
 
@@ -446,7 +457,6 @@ def play(wn, dif):
                 self.death()
                 return
 
-            
             self.coll_obj.y = ein.y
             self.coll_obj.height = ein.height
 
@@ -462,7 +472,7 @@ def play(wn, dif):
                 self.attacked = False
                 self.direction = "L"
                 self.speed = self.speed
-            
+
             self.move()
 
         def idle(self):
@@ -499,7 +509,7 @@ def play(wn, dif):
                 flip=[False, True][self.direction == "L"])
             for k in self.keys:
                 k.draw()
-        
+
         def next_key(self):
             for k in self.keys:
                 if not k.pressed:
@@ -508,28 +518,25 @@ def play(wn, dif):
 
     class Score(Font):
         def __init__(self):
-            Font.__init__(self, "0", font_family=font_path("MatchupPro"), size=51, color=(104,0,0), local_font=True)
+            Font.__init__(self, "SCORE: 0", font_family=font_path(
+                "MatchupPro"), size=42, color=(255, 255, 255), local_font=True)
             self.set_position(wn.width/2 - self.width/2, 35)
             self.score = 0
-            self.title = Font("SCORE", font_family=font_path("MatchupPro"), size=51, color=(104,0,0), local_font=True)
-            self.title.set_position(wn.width/2 - self.title.width/2, 0)
 
         def add(self, pts):
             self.score += pts
-            self.change_text(str(self.score))
+            self.change_text("SCORE: " + str(self.score))
             self.set_position(wn.width/2 - self.width/2, self.y)
-        
-            
 
     #############
     # Variables #
     #############
     DEBUGGING = True
-    
+
     background = GameImage(get_asset("bg.png"), (wn.width, wn.height))
     ein = Ein()
     monsters = []
-    
+
     # Sounds #
     bg_music = Sound(get_asset("danse.wav"))
     bg_music.set_repeat(True)
@@ -537,33 +544,50 @@ def play(wn, dif):
     attack_sfx.increase_volume(90)
 
     # Fonts #
-    fps_font = Font("FPS: 0", size=42)
+    fps_font = Font("FPS: 0", size=42, color=(255, 255, 255))
     fps_font.set_position(wn.width - fps_font.width, 0)
     fps_timer = time()
     frame_count = 0
 
     # Wave Info
-    wave_count = Font("CURRENT WAVE: 1", size=30, font_family=font_path("ExpressionPro"), local_font=True)
-    killed_font = Font("KILLED ON WAVE: 0/0", size=30, font_family=font_path("ExpressionPro"), local_font=True)
-    killed_font.set_position(0, wave_count.height + 10)
-    monsters_font = Font("ALIVE: 0", size=30, font_family=font_path("ExpressionPro"), local_font=True)
-    monsters_font.set_position(0, killed_font.y + killed_font.height + 10)
+    wave_count = Font("WAVE 1", size=60, font_family=font_path(
+        "ExpressionPro"), local_font=True, color=(255, 255, 255))
+    wave_count.set_position(wn.width/2 - wave_count.width/2, 5)
+
+    # killed_font = Font("KILLED ON WAVE: 0/0", size=30, font_family=font_path("ExpressionPro"), local_font=True, color=(255,255,255))
+    # killed_font.set_position(0, 0)
+    # monsters_font = Font("ALIVE: 0", size=30, font_family=font_path("ExpressionPro"), local_font=True, color=(255,255,255))
+    # monsters_font.set_position(0, killed_font.y + killed_font.height + 10)
 
     wave = 1
-    wave_loop = True # Auxiliar
+    wave_loop = True  # Auxiliar
 
-    wave_font = Font("Wave %d" % wave, font_family=font_path("arcadeclassic"), size=100, color=(0,0,0), local_font = True)
-    wave_font.set_position(wn.width/2 - wave_font.width/2, wn.height/2 - wave_font.height/2)
-   
+    wave_font = Font("Wave %d" % wave, font_family=font_path(
+        "arcadeclassic"), size=100, color=(0, 0, 0), local_font=True)
+    wave_font.set_position(wn.width/2 - wave_font.width/2,
+                           wn.height/2 - wave_font.height/2)
+
     wave_timer = time()
-    wave_power = False # Auxiliar em waves que te dão powerup
+    wave_power = False  # Auxiliar em waves que te dão powerup
 
-    health_statup = Font("Health up", color=(255, 231, 46), size= 69, font_family=font_path("EquipmentPro"), local_font=True)
-    health_statup.set_position(wn.width/4 - health_statup.width/2, wave_font.y + wave_font.height + 20)
-    reach_statup = Font("Reach up", color=(255, 231, 46), size= 69, font_family=font_path("EquipmentPro"), local_font=True)
-    reach_statup.set_position(3*wn.width/4 - reach_statup.width/2, wave_font.y + wave_font.height + 20)
-     
+    health_statup = Font("Health up", color=(
+        255, 231, 46), size=69, font_family=font_path("EquipmentPro"), local_font=True)
+    health_statup.set_position(
+        wn.width/4 - health_statup.width/2, wave_font.y + wave_font.height + 20)
+    reach_statup = Font("Reach up", color=(255, 231, 46), size=69,
+                        font_family=font_path("EquipmentPro"), local_font=True)
+    reach_statup.set_position(
+        3*wn.width/4 - reach_statup.width/2, wave_font.y + wave_font.height + 20)
+
     score = Score()
+    score.set_position(score.x, wave_count.y + wave_count.height + 5)
+
+    # Attributes
+    health_attr = Attribute("health")
+    health_attr.set_position(10, 10)
+    reach_attr = Attribute("reach")
+    reach_attr.set_position(10, health_attr.icon.y +
+                            health_attr.icon.height + 10)
 
     # Controladores
     killed_monsters = 0
@@ -571,7 +595,6 @@ def play(wn, dif):
     wave_total_monsters = 14 + wave
     min_keys = 1
     max_keys = 3
-
 
     spawn_timer = time()
     mouse = wn.get_mouse()
@@ -586,8 +609,9 @@ def play(wn, dif):
     while True:
         background.draw()
         score.draw()
-        score.title.draw()
-        
+        health_attr.draw()
+        reach_attr.draw()
+
         # FPS COUNTER
         frame_count += 1
         if time() - fps_timer >= 1:
@@ -602,8 +626,6 @@ def play(wn, dif):
         ein.draw()
 
         wave_count.draw()
-        killed_font.draw()
-        monsters_font.draw()
 
         # Wave loop
         if wave_loop:
@@ -616,10 +638,12 @@ def play(wn, dif):
 
                     if mouse.is_over_object(health_statup) and mouse.is_button_pressed(1):
                         ein.powerup("life")
+                        health_attr.add()
                         wave_power = False
                         wave_timer = time()
                     elif mouse.is_over_object(reach_statup) and mouse.is_button_pressed(1):
                         ein.powerup("reach")
+                        reach_attr.add()
                         wave_power = False
                         wave_timer = time()
 
@@ -633,11 +657,8 @@ def play(wn, dif):
             if wave >= 10:
                 min_keys = 2
 
-
         # Atualiza fontes de estado
-        wave_count.change_text("CURRENT WAVE: %d" % wave)
-        killed_font.change_text("KILLED ON WAVE: {}/{}".format(killed_monsters, wave_total_monsters))
-        monsters_font.change_text("ALIVE: {}".format(len(monsters)))
+        wave_count.change_text("WAVE %d" % wave)
 
         # Checa fim da wave
         if killed_monsters >= wave_total_monsters:
@@ -646,22 +667,25 @@ def play(wn, dif):
             wave_font.set_position(wn.width/2 - wave_font.width/2, wave_font.y)
             wave_loop = True
             wave_timer = time()
-            if wave % 5 == 0:
+            if wave % 1 == 0:
                 wave_power = True
 
         # Spawn monsters
-        if time() - spawn_timer > 0.5: # Intervalo entre spawn
+        if time() - spawn_timer > 0.25:  # Intervalo entre spawn
             spawn_timer = time()
-            if randint(0,10) > 7 and len(monsters) < max_monsters and len(monsters) + killed_monsters < wave_total_monsters:
-                dirc = choice(["L","R"]) # Escolher direção aleatória pro inimigo
-                x = 0 if dirc == "L" else wn.width 
-                
-                if len([m for m in monsters if type(m) == Hellhound]) < 1: # Permitir apenas n hellhounds ao mesmo tempo
-                    monster = 'Skelly' if randint(0,100) > 85 else 'Hellhound'
+            if randint(0, 10) > 7 and len(monsters) < max_monsters and len(monsters) + killed_monsters < wave_total_monsters:
+                # Escolher direção aleatória pro inimigo
+                dirc = choice(["L", "R"])
+                x = 0 if dirc == "L" else wn.width
+
+                # Permitir apenas n hellhounds ao mesmo tempo
+                if len([m for m in monsters if type(m) == Hellhound]) < 1:
+                    monster = 'Hellhound' if randint(
+                        0, 100) >= 90 else 'Skelly'
                 else:
                     monster = 'Skelly'
-                monsters.append(eval(monster)(life=choice(list(range(min_keys, max_keys + 1))), direction=dirc, x=x))
-
+                monsters.append(eval(monster)(life=choice(
+                    list(range(min_keys, max_keys + 1))), direction=dirc, x=x))
 
         mouse_over_monster = False
         # Update os monstros
@@ -699,6 +723,5 @@ def play(wn, dif):
         wn.update()
 
 
-
 if __name__ == "__main__":
-    play(Window(1366, 768), 1)
+    play(Window(1366, 918), 1)
