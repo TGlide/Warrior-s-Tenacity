@@ -165,7 +165,7 @@ def play(wn, dif):
                 if time() - self.attack_timer >= 1/self.cps:
                     if self.direction == "R":
                         monsters = list(sorted(filter(lambda m: m.next_key(
-                        ) and m.sprites[m.current].x + m.sprites[m.current].width/2 > wn.width/2, monsters), key=lambda mon: mon.x))
+                        ) and m.sprites[m.current].x + m.sprites[m.current].width/2 > wn.width/2, monsters), key=lambda mon: mon.x)) # Monsters to the right
                         for m in monsters:
                             if wn.width/2 <= m.x <= self.x+self.width + self.reach and m.next_key() and kb.key_pressed(m.next_key().key):
                                 self.attack_timer = time()
