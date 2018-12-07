@@ -157,7 +157,7 @@ def play(wn, dif):
         def jump(self):
             self.y += -self.jumpaux*wn.delta_time()
             self.jumpaux -= self.gravity*wn.delta_time()
-            if self.current != "jump" and (self.current != "attackjump" or (self.current == "attackjump" and not self.sprites[self.current].is_playing())):
+            if self.current != "jump" and (self.current != "attackjump" or (self.current == "attackjump" and not self.sprites[self.current].is_playing())) and self.current != "death":
                 self.change_sprite("jump")
                 self.sprites[self.current].set_curr_frame(0)
                 self.sprites[self.current].play()
@@ -193,7 +193,7 @@ def play(wn, dif):
             # DEATH
             if self.life == 0:
                 self.change_sprite("death")
-                return
+                
             # Jumping
             if self.jumpspeed != self.jumpaux:
                 self.jump()
@@ -203,7 +203,7 @@ def play(wn, dif):
             if self.jumpaux < -self.jumpspeed:
                 self.jumpaux = self.jumpspeed
                 self.y = wn.height - 100 - self.sprites[self.current].height
-                self.change_sprite('idle')
+                self.change_sprite('idle' if self.current != "death" else "death")
                 self.jumptimer = time()
 
             # Turning directions
