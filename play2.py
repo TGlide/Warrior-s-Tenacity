@@ -101,6 +101,7 @@ def play(wn, dif):
                 'attackjump': Sprite(get_sprite("ein{}attackjump.png".format(sep)), 4),
                 'walk': Sprite(get_sprite("ein{}walk.png".format(sep)), 6),
                 'jump': Sprite(get_sprite("ein{}jump.png".format(sep)), 10),
+                'death': Sprite(get_sprite("ein{}death.png".format(sep)), 7)
             }
             # Setar duração da animação dos sprite sheets
             self.sprites['jump'].set_loop(False)
@@ -150,6 +151,7 @@ def play(wn, dif):
             self.jumpspeed = 1200
             self.jumpaux = self.jumpspeed
             self.gravity = 2700
+            self.jumptimer = time() # Impede spam de pulo
 
         def jump(self):
             self.y += -self.jumpaux*wn.delta_time()
@@ -190,13 +192,14 @@ def play(wn, dif):
             # Jumping
             if self.jumpspeed != self.jumpaux:
                 self.jump()
-            if self.jumpspeed == self.jumpaux and kb.key_pressed("UP"):
+            if self.jumpspeed == self.jumpaux and kb.key_pressed("UP") and time() - self.jumptimer > 0.36:
                 self.jumpaux -= 1
                 return
             if self.jumpaux < -self.jumpspeed:
                 self.jumpaux = self.jumpspeed
                 self.y = wn.height - 122 - self.sprites[self.current].height
                 self.change_sprite('idle')
+                self.jumptimer = time()
 
             # Turning directions
             if kb.key_pressed("left"):
@@ -470,7 +473,7 @@ def play(wn, dif):
                 'idle': Sprite(get_sprite("hellhound{}PNG{}idle.png".format(sep, sep)), 6, size=(1000, 125)),
                 'walk': Sprite(get_sprite("hellhound{}PNG{}walk.png".format(sep, sep)), 12, size=(1000, 125)),
                 'run': Sprite(get_sprite("hellhound{}PNG{}run.png".format(sep, sep)), 5, size=(int(225*self.mf), int(32*self.mf))),
-                'dead': Sprite(get_sprite("skelly{}dead.png".format(sep)), 15, size=(1000, 125))
+                'dead': Sprite(get_sprite("hellhound{}PNG{}death.png".format(sep, sep)), 7, size=(360,48))
             }
             # Setar duração da animação dos sprite sheets
             for s in self.sprites.values():
