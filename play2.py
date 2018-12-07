@@ -706,6 +706,7 @@ def play(wn, dif):
     #############
     while True:
         if wn.get_keyboard().key_pressed("esc"):
+            bg_music.stop()
             return
         # Draw UI
         background.draw()
@@ -741,6 +742,7 @@ def play(wn, dif):
             death_timer = time()
             wave_font.change_text("GAME OVER")
             wave_font.set_position(wn.width/2 - wave_font.width/2, wave_font.y)
+            
 
         if ein_death:
             wave_font.draw()
