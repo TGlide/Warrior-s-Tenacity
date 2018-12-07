@@ -55,7 +55,7 @@ def play(wn, dif):
                 os.sep, itm)), size=(int(96*self.mf), int(48*self.mf)), frames=2)
             self.icon.set_total_duration(1)
 
-            self.qtd = 0
+            self.qtd = 1
             self.qtd_font = Font("x" + str(self.qtd), font_family=font_path(
                 "BitPotionExt"), color=(255, 255, 255), size=50, local_font=True)
             self.icon.set_curr_frame(0 if self.qtd == 0 else 1)
