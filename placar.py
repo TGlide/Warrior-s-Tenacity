@@ -5,6 +5,9 @@ from PPlay.font import *
 from PPlay.window import *
 
 def placar(wn):
+    placarzin = Font("Placar", font_family=font_path("arcadeclassic"), size=75, 
+        color=(255,255,255), local_font=True)
+    placarzin.set_position(wn.width/2 - placarzin.width/2, 100)
     with open("placar.txt", "r") as f:
         x = sorted([i for i in f.readlines() if len(i.split()) == 2], key = lambda x: -int(x.split(" ")[1]))
         scores = [Font(line.replace("\n", ""), font_family=font_path("arcadeclassic"), size=75, 
@@ -14,6 +17,7 @@ def placar(wn):
     
     while True:
         wn.set_background_color((0,0,0))
+        placarzin.draw()
 
         for score in range(3 if len(scores)>= 3 else len(scores)):
             scores[score].draw()
