@@ -6,7 +6,7 @@ from PPlay.window import *
 
 def placar(wn):
     with open("placar.txt", "r") as f:
-        x = sorted(f.readlines(), key = lambda x: -int(x.split(" ")[1]))
+        x = sorted([i for i in f.readlines() if len(i.split()) == 2], key = lambda x: -int(x.split(" ")[1]))
         scores = [Font(line.replace("\n", ""), font_family=font_path("arcadeclassic"), size=75, 
         color=(255,255,255), local_font=True) for line in x]
     for score in range(3 if len(scores)>= 3 else len(scores)):
