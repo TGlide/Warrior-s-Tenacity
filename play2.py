@@ -21,14 +21,16 @@ def play(wn, dif):
     class Attribute:
         mf = 3
 
-        def __init__(self, attr):
+        def __init__(self, attr, total):
             self.icon = Sprite(get_sprite("attribute{}{}.png".format(
                 os.sep, attr)), size=(16*self.mf, 16*self.mf))
             self.levels = [Sprite(get_sprite("attribute{}{}_level.png".format(
-                os.sep, attr)), size=(32*self.mf, 16*self.mf), frames=2) for i in range(5)]
+                os.sep, attr)), size=(32*self.mf, 16*self.mf), frames=2) for i in range(total)]
             for l in self.levels:
                 l.set_total_duration(1)
+            
             self.level = 0
+            self.total = total
 
         def set_position(self, x, y):
             self.icon.set_position(x, y)
@@ -45,6 +47,48 @@ def play(wn, dif):
             for l in self.levels:
                 l.draw()
 
+    class Item:
+        mf = 2
+
+        def __init__(self, itm):
+            self.icon = Sprite(get_sprite("item{}{}.png".format(
+                os.sep, itm)), size=(96*self.mf, 48*self.mf), frames=2)
+            self.icon.set_total_duration(1)
+
+            self.qtd = 2
+            self.qtd_font = Font("x" + str(self.qtd), font_family=font_path(
+                "BitPotionExt"), color=(255, 255, 255), size=50, local_font=True)
+            self.icon.set_curr_frame(0 if self.qtd == 0 else 1)
+
+            self.use_timer = time()
+
+        def set_position(self, x, y):
+            self.icon.set_position(x, y)
+            self.qtd_font.set_position(self.icon.x + self.icon.width - self.qtd_font.width,
+                                       self.icon.y + self.icon.height - self.qtd_font.height)
+
+        def add(self):
+            self.qtd += 1
+            if self.qtd == 1:
+                self.icon.set_curr_frame(1)
+            self.qtd_font.change_text("x" + str(self.qtd))
+            self.qtd_font.set_position(self.icon.x + self.icon.width - self.qtd_font.width,
+                                       self.icon.y + self.icon.height - self.qtd_font.height)
+
+        def use(self):
+            self.qtd -= 1
+            if self.qtd == 0:
+                self.icon.set_curr_frame(0)
+            self.use_timer = time()
+            self.qtd_font.change_text("x" + str(self.qtd))
+            self.qtd_font.set_position(self.icon.x + self.icon.width - self.qtd_font.width,
+                                       self.icon.y + self.icon.height - self.qtd_font.height)
+
+        def draw(self):
+            self.icon.draw()
+            if self.qtd != 0:
+                self.qtd_font.draw()
+
     class Ein:
         cps = 10  # Characters per second permitted
 
@@ -54,11 +98,14 @@ def play(wn, dif):
                 'idle': Sprite(get_sprite("ein{}idle.png".format(sep)), 4),
                 'attack1': Sprite(get_sprite("ein{}attack1.png".format(sep)), 5),
                 'attack2': Sprite(get_sprite("ein{}attack2.png".format(sep)), 6),
+                'attackjump': Sprite(get_sprite("ein{}attackjump.png".format(sep)), 4),
                 'walk': Sprite(get_sprite("ein{}walk.png".format(sep)), 6),
                 'jump': Sprite(get_sprite("ein{}jump.png".format(sep)), 10),
             }
             # Setar duração da animação dos sprite sheets
             self.sprites['jump'].set_loop(False)
+            self.sprites['attackjump'].set_loop(False)
+            self.sprites['attackjump'].set_total_duration(325)
             for i in range(1, 3):
                 self.sprites['attack' + str(i)].set_loop(False)
                 self.sprites['attack' + str(i)].set_total_duration(325)
@@ -107,7 +154,7 @@ def play(wn, dif):
         def jump(self):
             self.y += -self.jumpaux*wn.delta_time()
             self.jumpaux -= self.gravity*wn.delta_time()
-            if self.current != "jump":
+            if self.current != "jump" and (self.current != "attackjump" or (self.current == "attackjump" and not self.sprites[self.current].is_playing())):
                 self.change_sprite("jump")
                 self.sprites[self.current].set_curr_frame(0)
                 self.sprites[self.current].play()
@@ -139,7 +186,7 @@ def play(wn, dif):
         def change_sprite(self, sprite):
             self.current = sprite if self.current != sprite else self.current
 
-        def action(self, kb, monsters):
+        def action(self, kb, monsters, bloody, potion):
             # Jumping
             if self.jumpspeed != self.jumpaux:
                 self.jump()
@@ -160,12 +207,27 @@ def play(wn, dif):
                 self.direction = "R"
                 if self.current != "jump":
                     self.change_sprite("idle")
+            # Potion
+            elif kb.key_pressed("q"):
+                if potion.qtd > 0 and self.life < len(self.life_sprites) and time() - potion.use_timer > 1:
+                    potion.use()
+            
+                    self.life += 2
+                    self.take_hit()
+            # Sanguinário
+            elif kb.key_pressed("e"):
+                if bloody.qtd > 0 and time() - bloody.use_timer > 1:
+                    bloody.use()
+                    for m in monsters:
+                        for k in list(filter(lambda x: not x.pressed, m.keys)):
+                            k.press()
+                        m.life=0
             # Attacking
             else:
                 if time() - self.attack_timer >= 1/self.cps:
                     if self.direction == "R":
                         monsters = list(sorted(filter(lambda m: m.next_key(
-                        ) and m.sprites[m.current].x + m.sprites[m.current].width/2 > wn.width/2, monsters), key=lambda mon: mon.x)) # Monsters to the right
+                        ) and m.sprites[m.current].x + m.sprites[m.current].width/2 > wn.width/2, monsters), key=lambda mon: mon.x))  # Monsters to the right
                         for m in monsters:
                             if wn.width/2 <= m.x <= self.x+self.width + self.reach and m.next_key() and kb.key_pressed(m.next_key().key):
                                 self.attack_timer = time()
@@ -185,7 +247,10 @@ def play(wn, dif):
 
         def attack(self, m):
             if "attack" not in self.current:
-                self.change_sprite("attack1")
+                if self.current == "jump":
+                    self.change_sprite("attackjump")
+                else:
+                    self.change_sprite("attack1")
                 self.sprites[self.current].set_curr_frame(0)
                 self.sprites[self.current].play()
             else:
@@ -214,8 +279,9 @@ def play(wn, dif):
                 # Acabou uma animação de ataque
                 if self.attack_pool > 0:
                     self.attack_pool -= 1
-                    next_attack = int(self.current[-1]) % 2 + 1
-                    self.change_sprite("attack" + str(next_attack))
+                    if self.current != "attackjump":
+                        next_attack = int(self.current[-1]) % 2 + 1
+                        self.change_sprite("attack" + str(next_attack))
                     self.sprites[self.current].set_curr_frame(0)
                     self.sprites[self.current].play()
 
@@ -533,6 +599,7 @@ def play(wn, dif):
     #############
     DEBUGGING = True
 
+    # Game Objects
     background = GameImage(get_asset("bg.png"), (wn.width, wn.height))
     ein = Ein()
     monsters = []
@@ -544,10 +611,10 @@ def play(wn, dif):
     attack_sfx.increase_volume(90)
 
     # Fonts #
-    fps_font = Font("FPS: 0", size=42, color=(255, 255, 255))
-    fps_font.set_position(wn.width - fps_font.width, 0)
-    fps_timer = time()
-    frame_count = 0
+    # fps_font = Font("FPS: 0", size=42, color=(255, 255, 255))
+    # fps_font.set_position(wn.width - fps_font.width, 0)
+    # fps_timer = time()
+    # frame_count = 0
 
     # Wave Info
     wave_count = Font("WAVE 1", size=60, font_family=font_path(
@@ -568,8 +635,8 @@ def play(wn, dif):
                            wn.height/2 - wave_font.height/2)
 
     wave_timer = time()
-    wave_power = False  # Auxiliar em waves que te dão powerup
 
+    wave_power = False  # Auxiliar em waves que te dão atributos
     health_statup = Font("Health up", color=(
         255, 231, 46), size=69, font_family=font_path("EquipmentPro"), local_font=True)
     health_statup.set_position(
@@ -579,15 +646,39 @@ def play(wn, dif):
     reach_statup.set_position(
         3*wn.width/4 - reach_statup.width/2, wave_font.y + wave_font.height + 20)
 
+    wave_item = False
+    potion_up = Font("Potion", color=(
+        255, 231, 46), size=69, font_family=font_path("EquipmentPro"), local_font=True)
+    potion_up.set_position(
+        wn.width/4 - potion_up.width/2, wave_font.y + wave_font.height + 20)
+    bloody_up = Font("Sanguinario", color=(255, 231, 46), size=69,
+                        font_family=font_path("EquipmentPro"), local_font=True)
+    bloody_up.set_position(
+        3*wn.width/4 - bloody_up.width/2, wave_font.y + wave_font.height + 20)
+
     score = Score()
     score.set_position(score.x, wave_count.y + wave_count.height + 5)
 
     # Attributes
-    health_attr = Attribute("health")
+    health_attr = Attribute("health", 3)
     health_attr.set_position(10, 10)
-    reach_attr = Attribute("reach")
+    reach_attr = Attribute("reach", 6)
     reach_attr.set_position(10, health_attr.icon.y +
                             health_attr.icon.height + 10)
+
+    # Items
+    bloody = Item("bloodsw")
+    bloody_font = Font("SANGUINARIO", font_family=font_path(
+        "BitPotionExt"), size=30, color=(255, 255, 255), local_font=True)
+
+    bloody.set_position(wn.width - 10 - bloody.icon.width, 10 + bloody_font.height + 5)
+    bloody_font.set_position(bloody.icon.x + bloody.icon.width/2 - bloody_font.width/2, 10)
+
+    potion = Item("potion")
+    potion_font = Font("POTION", font_family=font_path(
+        "BitPotionExt"), size=30,color=(255, 255, 255), local_font=True)
+    potion.set_position(bloody.icon.x - 10 - potion.icon.width, 10 + potion_font.height + 5)
+    potion_font.set_position(potion.icon.x + potion.icon.width/2 - potion_font.width/2, 10)
 
     # Controladores
     killed_monsters = 0
@@ -603,48 +694,80 @@ def play(wn, dif):
     mt = time()
 
     # bg_music.play()
+
     #############
     # Game Loop #
     #############
     while True:
+        # Draw UI
         background.draw()
+        
         score.draw()
+        
         health_attr.draw()
         reach_attr.draw()
+        
+        wave_count.draw()
+
+        bloody.draw()
+        bloody_font.draw()
+        potion.draw()
+        potion_font.draw()
 
         # FPS COUNTER
-        frame_count += 1
-        if time() - fps_timer >= 1:
-            fps_font.change_text("FPS: " + str(frame_count))
-            frame_count = 0
-            fps_timer = time()
-        fps_font.set_position(wn.width - fps_font.width, 0)
-        fps_font.draw()
+        # frame_count += 1
+        # if time() - fps_timer >= 1:
+        #     fps_font.change_text("FPS: " + str(frame_count))
+        #     frame_count = 0
+        #     fps_timer = time()
+        # fps_font.set_position(wn.width - fps_font.width, 0)
+        # fps_font.draw()
 
-        ein.action(kb, monsters)
+        # Ein
+        ein.action(kb, monsters, bloody, potion)
         ein.update()
         ein.draw()
 
-        wave_count.draw()
+        
 
         # Wave loop
         if wave_loop:
-            if not time() - wave_timer > 1.5 or wave_power:
+            if not time() - wave_timer > 1.5 or wave_power or wave_item:
                 wave_font.draw()
 
                 if wave_power:
-                    health_statup.draw()
-                    reach_statup.draw()
+                    if health_attr.level < health_attr.total:
+                        health_statup.draw()
+                    if reach_attr.level < reach_attr.total:
+                        reach_statup.draw()
 
-                    if mouse.is_over_object(health_statup) and mouse.is_button_pressed(1):
+                    if mouse.is_over_object(health_statup) and mouse.is_button_pressed(1) and time() - mt > 0.5 and health_attr.level < health_attr.total:
+                        mt = time()
                         ein.powerup("life")
                         health_attr.add()
                         wave_power = False
                         wave_timer = time()
-                    elif mouse.is_over_object(reach_statup) and mouse.is_button_pressed(1):
+                    elif mouse.is_over_object(reach_statup) and mouse.is_button_pressed(1) and time() - mt > 0.5 and reach_attr.level < reach_attr.total:
+                        mt = time()
                         ein.powerup("reach")
                         reach_attr.add()
                         wave_power = False
+                        wave_timer = time()
+                
+                elif wave_item:
+                    if potion.qtd < 3:
+                        potion_up.draw()
+                    if bloody.qtd < 3:
+                        bloody_up.draw()
+                    if mouse.is_over_object(potion_up) and mouse.is_button_pressed(1) and time() - mt > 0.5 and potion.qtd < 3:
+                        mt = time()
+                        potion.add()
+                        wave_item = False
+                        wave_timer = time()
+                    elif mouse.is_over_object(bloody_up) and mouse.is_button_pressed(1) and time() - mt > 0.5 and bloody.qtd < 3:
+                        mt = time()
+                        bloody.add()
+                        wave_item = False
                         wave_timer = time()
 
                 wn.update()
@@ -667,25 +790,28 @@ def play(wn, dif):
             wave_font.set_position(wn.width/2 - wave_font.width/2, wave_font.y)
             wave_loop = True
             wave_timer = time()
-            if wave % 1 == 0:
+            if wave % 1 == 0 and (health_attr.level < health_attr.total or reach_attr.level < reach_attr.total):
                 wave_power = True
+            if wave % 1 == 0 and (potion.qtd < 3 or bloody.qtd < 3):
+                wave_item = True
 
         # Spawn monsters
-        if time() - spawn_timer > 0.25:  # Intervalo entre spawn
+        if time() - spawn_timer > 0.2:  # Intervalo entre spawn
             spawn_timer = time()
-            if randint(0, 10) > 7 and len(monsters) < max_monsters and len(monsters) + killed_monsters < wave_total_monsters:
+            if len(monsters) < max_monsters and len(monsters) + killed_monsters < wave_total_monsters and randint(0, 10) > 5:
                 # Escolher direção aleatória pro inimigo
                 dirc = choice(["L", "R"])
                 x = 0 if dirc == "L" else wn.width
-
                 # Permitir apenas n hellhounds ao mesmo tempo
                 if len([m for m in monsters if type(m) == Hellhound]) < 1:
                     monster = 'Hellhound' if randint(
-                        0, 100) >= 90 else 'Skelly'
+                        0, 100) >= 80 else 'Skelly'
                 else:
                     monster = 'Skelly'
                 monsters.append(eval(monster)(life=choice(
                     list(range(min_keys, max_keys + 1))), direction=dirc, x=x))
+                
+                spawn_timer = time() + 0.2
 
         mouse_over_monster = False
         # Update os monstros

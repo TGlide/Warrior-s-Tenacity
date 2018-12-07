@@ -1,2 +1,2 @@
-ge_text(str(ein.attack_pool))
-        # attack_pool_font.draw()
+
+                        self.change_sprite("attack" + str(next_attack))
