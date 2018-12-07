@@ -10,8 +10,8 @@ from dificuldade import dificuldade
 # GAME CONSTANTS #
 ##################
 
-WIN_W = 1366
-WIN_H = 918
+WIN_W = 1143
+WIN_H = 768
 DIFICULDADE = 1
 
 #############
@@ -22,9 +22,7 @@ while True:
 	selec = menu(wn)
 	if selec == 0: 
 		play(wn, DIFICULDADE)
-	elif selec == 1:
-		DIFICULDADE = dificuldade(wn)
-	else:
+	elif:
 		break
 
 

@@ -48,11 +48,11 @@ def play(wn, dif):
                 l.draw()
 
     class Item:
-        mf = 2
+        mf = 1.5
 
         def __init__(self, itm):
             self.icon = Sprite(get_sprite("item{}{}.png".format(
-                os.sep, itm)), size=(96*self.mf, 48*self.mf), frames=2)
+                os.sep, itm)), size=(int(96*self.mf), int(48*self.mf)), frames=2)
             self.icon.set_total_duration(1)
 
             self.qtd = 2
@@ -107,6 +107,7 @@ def play(wn, dif):
             self.sprites['jump'].set_loop(False)
             self.sprites['attackjump'].set_loop(False)
             self.sprites['attackjump'].set_total_duration(325)
+            self.sprites['death'].set_loop(False)
             for i in range(1, 3):
                 self.sprites['attack' + str(i)].set_loop(False)
                 self.sprites['attack' + str(i)].set_total_duration(325)
@@ -117,7 +118,7 @@ def play(wn, dif):
             self.direction = "R"
 
             self.x = wn.width/2 - self.sprites[self.current].width/2
-            self.y = wn.height - 122 - self.sprites[self.current].height
+            self.y = wn.height - 100 - self.sprites[self.current].height
 
             self.width = self.sprites[self.current].width
             self.height = self.sprites[self.current].height
@@ -189,6 +190,10 @@ def play(wn, dif):
             self.current = sprite if self.current != sprite else self.current
 
         def action(self, kb, monsters, bloody, potion):
+            # DEATH
+            if self.life == 0:
+                self.change_sprite("death")
+                return
             # Jumping
             if self.jumpspeed != self.jumpaux:
                 self.jump()
@@ -197,7 +202,7 @@ def play(wn, dif):
                 return
             if self.jumpaux < -self.jumpspeed:
                 self.jumpaux = self.jumpspeed
-                self.y = wn.height - 122 - self.sprites[self.current].height
+                self.y = wn.height - 100 - self.sprites[self.current].height
                 self.change_sprite('idle')
                 self.jumptimer = time()
 
@@ -265,10 +270,6 @@ def play(wn, dif):
                 for i in range(len(self.life_sprites)):
                     self.life_sprites[i].set_curr_frame(
                         0 if i < self.life else 1)
-            else:
-                self.life = len(self.life_sprites)
-                for s in self.life_sprites:
-                    s.update()
 
         def update(self):
             # if self.current == "walk":
@@ -348,7 +349,7 @@ def play(wn, dif):
             self.direction = direction
             self.x = [-self.sprites[self.current].width,
                       wn.width][direction == "R"] if not x else x
-            self.y = wn.height - 122 - self.sprites[self.current].height
+            self.y = wn.height - 100 - self.sprites[self.current].height
 
             self.width = self.sprites[self.current].width
             self.height = self.sprites[self.current].height
@@ -489,7 +490,7 @@ def play(wn, dif):
             self.direction = direction
             self.x = [-self.sprites[self.current].width,
                       wn.width][direction == "R"] if not x else x
-            self.y = wn.height - 122 - self.sprites[self.current].height
+            self.y = wn.height - 100 - self.sprites[self.current].height
 
             self.width = self.sprites[self.current].width
             self.height = self.sprites[self.current].height
@@ -690,6 +691,8 @@ def play(wn, dif):
     min_keys = 1
     max_keys = 3
 
+    ein_death = False
+
     spawn_timer = time()
     mouse = wn.get_mouse()
     kb = wn.get_keyboard()
@@ -730,8 +733,17 @@ def play(wn, dif):
         ein.action(kb, monsters, bloody, potion)
         ein.update()
         ein.draw()
+        # Ein Death
+        if ein.life == 0 and not ein_death:
+            ein_death = True
+            death_timer = time()
+            wave_font.change_text("GAME OVER")
+            wave_font.set_position(wn.width/2 - wave_font.width/2, wave_font.y)
 
-        
+        if ein_death:
+            wave_font.draw()
+            if time() - death_timer > 3:
+                return
 
         # Wave loop
         if wave_loop:
@@ -853,4 +865,4 @@ def play(wn, dif):
 
 
 if __name__ == "__main__":
-    play(Window(1366, 918), 1)
+    play(Window(1143, 768), 1)
