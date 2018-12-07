@@ -5,6 +5,7 @@ from PPlay.window import *
 from menu import menu
 from play2 import play
 from dificuldade import dificuldade
+from placar import placar
 
 ##################
 # GAME CONSTANTS #
@@ -22,7 +23,9 @@ while True:
 	selec = menu(wn)
 	if selec == 0: 
 		play(wn, DIFICULDADE)
-	elif:
+	elif selec == 1:
+		placar(wn)
+	else:
 		break
 
 

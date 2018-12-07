@@ -1,2 +1,2 @@
-
-                        self.change_sprite("attack" + str(next_attack))
+    for n in scores:
+                        f.write(" ".join(scores))

@@ -55,7 +55,7 @@ def play(wn, dif):
                 os.sep, itm)), size=(int(96*self.mf), int(48*self.mf)), frames=2)
             self.icon.set_total_duration(1)
 
-            self.qtd = 2
+            self.qtd = 0
             self.qtd_font = Font("x" + str(self.qtd), font_family=font_path(
                 "BitPotionExt"), color=(255, 255, 255), size=50, local_font=True)
             self.icon.set_curr_frame(0 if self.qtd == 0 else 1)
@@ -601,7 +601,7 @@ def play(wn, dif):
     #############
     # Variables #
     #############
-    DEBUGGING = True
+    DEBUGGING = False
 
     # Game Objects
     background = GameImage(get_asset("bg.png"), (wn.width, wn.height))
@@ -699,12 +699,14 @@ def play(wn, dif):
 
     mt = time()
 
-    # bg_music.play()
+    bg_music.play()
 
     #############
     # Game Loop #
     #############
     while True:
+        if wn.get_keyboard().key_pressed("esc"):
+            return
         # Draw UI
         background.draw()
         
@@ -743,6 +745,21 @@ def play(wn, dif):
         if ein_death:
             wave_font.draw()
             if time() - death_timer > 3:
+                name = input("Digite seu nome: ")[:3].upper()
+                with open("placar.txt", "r") as f:
+                    scores = [line.split() for line in f.readlines()]
+                    if name in [x[0] for x in scores]:
+                        for n in range(len(scores)):
+                            if scores[n][0] == name:
+                                if int(scores[n][1]) < score.score:
+                                    scores[n][1] = "0"*(4-len(str(score.score))) +  str(score.score)
+                    else:
+                        scores.append([name, "0"*(4-len(str(score.score))) +  str(score.score)])
+                print(scores)
+                with open("placar.txt", "w") as f:
+                    for n in scores:
+                        f.write(" ".join(n) + "\n")
+                bg_music.stop()
                 return
 
         # Wave loop
@@ -805,9 +822,9 @@ def play(wn, dif):
             wave_font.set_position(wn.width/2 - wave_font.width/2, wave_font.y)
             wave_loop = True
             wave_timer = time()
-            if wave % 1 == 0 and (health_attr.level < health_attr.total or reach_attr.level < reach_attr.total):
+            if wave % 5 == 0 and (health_attr.level < health_attr.total or reach_attr.level < reach_attr.total):
                 wave_power = True
-            if wave % 1 == 0 and (potion.qtd < 3 or bloody.qtd < 3):
+            if wave % 3 == 0 and (potion.qtd < 3 or bloody.qtd < 3):
                 wave_item = True
 
         # Spawn monsters
