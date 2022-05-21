@@ -14,7 +14,5 @@ Projeto final para a aula de Lab Jogos, UFF 18.2
 ## Membros
 
 Thomas Gouveia Lopes
-
 Lucas Tavares
-
 Lucas Amaral
