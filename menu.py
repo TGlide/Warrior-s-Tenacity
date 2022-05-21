@@ -19,12 +19,12 @@ def menu(wn):
               size=75, color=(255, 255, 255), local_font=True)
 	play.set_position(wn.width/2 - play.width/2, title.y + title.height)
 
-	dificuldade=Font("Dificuldade", font_family=font_path("FutilePro"),
+	dificuldade=Font("Placar", font_family=font_path("FutilePro"),
               size=75, color=(255, 255, 255), local_font=True)
 	dificuldade.set_position(
 	    wn.width/2 - dificuldade.width/2, play.y + play.height + 20)
 
-	placar=Font("Placar", font_family=font_path("FutilePro"),
+	placar=Font("Sair", font_family=font_path("FutilePro"),
               size=75, color=(255, 255, 255), local_font=True)
 	placar.set_position(wn.width/2 - placar.width/2,
 	                    dificuldade.y + dificuldade.height + 20)

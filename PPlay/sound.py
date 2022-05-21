@@ -9,7 +9,7 @@ pygame.init()
 """Sound é uma classe de controle dos sons do jogo - efeitos, música"""
 class Sound():
     """ATENÇÃO! O arquivo passado deve ser .OGG!!! Se não pode gerar problemas."""
-    def __init__(self, sound_file):
+    def __init__(self, sound_file, music=False):
         self.loop = False
         self.sound_file = sound_file
         self.volume = 50

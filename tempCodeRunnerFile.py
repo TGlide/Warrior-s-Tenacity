@@ -1,2 +1,2 @@
-
-def play(wn, dif):
+    for n in scores:
+                        f.write(" ".join(scores))

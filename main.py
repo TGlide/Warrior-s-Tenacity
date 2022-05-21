@@ -3,14 +3,15 @@ import random
 
 from PPlay.window import *
 from menu import menu
-from play import play
+from play2 import play
 from dificuldade import dificuldade
+from placar import placar
 
 ##################
 # GAME CONSTANTS #
 ##################
 
-WIN_W = 1366
+WIN_W = 1143
 WIN_H = 768
 DIFICULDADE = 1
 
@@ -23,7 +24,7 @@ while True:
 	if selec == 0: 
 		play(wn, DIFICULDADE)
 	elif selec == 1:
-		DIFICULDADE = dificuldade(wn)
+		placar(wn)
 	else:
 		break
 
